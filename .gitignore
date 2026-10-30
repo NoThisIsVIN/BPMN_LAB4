@@ -15,3 +15,7 @@ __pycache__/
 .idea/
 *.iml
 .vscode/
+
+# Local tooling and notes (kept on disk, not published)
+/scripts/
+/docs/

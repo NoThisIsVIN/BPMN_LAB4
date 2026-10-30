@@ -164,24 +164,12 @@ straight to the officer.
 │                                       docs/                       DMN rules + real sample evaluations
 │                                       evidence/                   run-log.json, test-results.md, screenshots/
 │                                       REPORT.md                   implementation report
-├── scripts/
-│   ├── bpmn/                       diagram generators (grid layout → readable BPMN/DMN)
-│   ├── c8.py                       small CLI for the Camunda REST API (start, tasks, incidents, retry, evaluate)
-│   ├── run_scenarios.py            runs a lab's scenarios and records the real outcomes
-│   ├── report_assets.py            fills each REPORT.md's results table and screenshot gallery from the evidence
-│   ├── scenarios/                  Lab 1 scenario generator
-│   └── render/                     bpmn-js / dmn-js renderer and the Operate/Tasklist screenshot tool (Node)
-├── docs/
-│   ├── environment.md              versions, ports, how Camunda 8 Run was started
-│   └── bpmn-style-guide.md         the readability rules all diagrams follow
 ```
 
 ## Prerequisites
 
 - Camunda 8 Run 8.8 (we used the copy bundled with Camunda Modeler 5.49: `c8run\start-c8run.bat`)
 - JDK 21+ and Maven 3.9+
-- Python 3.10+ (test runner, no extra packages)
-- Optional, for re-capturing evidence: Node 20+ and Microsoft Edge (`cd scripts/render && npm install`)
 
 ## Quick start
 
@@ -191,9 +179,10 @@ straight to the officer.
 mvn test
 # 3. Start one lab app (deploys its BPMN/DMN/forms and starts workers + mock API)
 mvn -pl lab1-loan-approval spring-boot:run
-# 4. In another terminal: run that lab's scenarios against the engine
-python scripts/run_scenarios.py lab1-loan-approval
-# (add --screenshots to re-capture Operate/Tasklist evidence)
+# 4. In another terminal: start an instance with the variables of a test scenario
+curl -X POST http://localhost:8080/v2/process-instances -H "Content-Type: application/json" \
+  -d '{"processDefinitionId": "loan-approval", "variables": { ...the "variables" block of a test-data/*.json file... }}'
+# 5. Follow it in Operate (http://localhost:8080/operate), complete human tasks in Tasklist (http://localhost:8080/tasklist)
 ```
 
 Lab 2 uses port 8082 and Lab 3 uses port 8083; all three apps can run at the same time.
