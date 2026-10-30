@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_loan-decision" name="Loan decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.49.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <decision id="loan-decision" name="Loan decision">
+    <description>Educational loan rules (not real credit policy). FIRST hit policy: rules are evaluated top-down and the first match wins, so hard rejections come first.</description>
+    <decisionTable id="DecisionTable_loan-decision" hitPolicy="FIRST">
+      <input id="Input_creditScore" label="Credit score">
+        <inputExpression id="InputExpression_creditScore" typeRef="number">
+          <text>creditScore</text>
+        </inputExpression>
+      </input>
+      <input id="Input_dti" label="Debt-to-income ratio">
+        <inputExpression id="InputExpression_dti" typeRef="number">
+          <text>debtToIncomeRatio</text>
+        </inputExpression>
+      </input>
+      <input id="Input_employment" label="Employment status">
+        <inputExpression id="InputExpression_employment" typeRef="string">
+          <text>employmentStatus</text>
+        </inputExpression>
+      </input>
+      <input id="Input_amount" label="Loan amount">
+        <inputExpression id="InputExpression_amount" typeRef="number">
+          <text>loanAmount</text>
+        </inputExpression>
+      </input>
+      <input id="Input_lti" label="Loan-to-annual-income ratio">
+        <inputExpression id="InputExpression_lti" typeRef="number">
+          <text>loanToIncomeRatio</text>
+        </inputExpression>
+      </input>
+      <output id="Output_outcome" label="Outcome" name="outcome" typeRef="string">
+        <outputValues id="OutputValues_outcome">
+          <text>"APPROVED","REJECTED","MANUAL_REVIEW"</text>
+        </outputValues>
+      </output>
+      <output id="Output_reason" label="Reason" name="reason" typeRef="string">
+      </output>
+      <output id="Output_ruleId" label="Rule ID" name="ruleId" typeRef="string">
+      </output>
+      <rule id="Rule_loan_decision_1">
+        <description>Hard reject: credit score below the minimum of 550</description>
+        <inputEntry id="In_1_0">
+          <text>&lt; 550</text>
+        </inputEntry>
+        <inputEntry id="In_1_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_1_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_1_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_1_4">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_1_0">
+          <text>"REJECTED"</text>
+        </outputEntry>
+        <outputEntry id="Out_1_1">
+          <text>"Credit score below minimum of 550"</text>
+        </outputEntry>
+        <outputEntry id="Out_1_2">
+          <text>"LD-1"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_loan_decision_2">
+        <description>Hard reject: total monthly debt (incl. new loan) above 50% of income</description>
+        <inputEntry id="In_2_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_2_1">
+          <text>&gt; 0.5</text>
+        </inputEntry>
+        <inputEntry id="In_2_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_2_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_2_4">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_2_0">
+          <text>"REJECTED"</text>
+        </outputEntry>
+        <outputEntry id="Out_2_1">
+          <text>"Debt-to-income ratio above 50%"</text>
+        </outputEntry>
+        <outputEntry id="Out_2_2">
+          <text>"LD-2"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_loan_decision_3">
+        <description>Hard reject: no employment income to repay the loan</description>
+        <inputEntry id="In_3_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_3_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_3_2">
+          <text>"UNEMPLOYED"</text>
+        </inputEntry>
+        <inputEntry id="In_3_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_3_4">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_3_0">
+          <text>"REJECTED"</text>
+        </outputEntry>
+        <outputEntry id="Out_3_1">
+          <text>"No verifiable employment income"</text>
+        </outputEntry>
+        <outputEntry id="Out_3_2">
+          <text>"LD-3"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_loan_decision_4">
+        <description>Large loans are never auto-approved</description>
+        <inputEntry id="In_4_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_4_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_4_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_4_3">
+          <text>&gt; 100000</text>
+        </inputEntry>
+        <inputEntry id="In_4_4">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_4_0">
+          <text>"MANUAL_REVIEW"</text>
+        </outputEntry>
+        <outputEntry id="Out_4_1">
+          <text>"Amount above automatic approval limit of 100 000"</text>
+        </outputEntry>
+        <outputEntry id="Out_4_2">
+          <text>"LD-4"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_loan_decision_5">
+        <description>Auto-approve: strong score, low debt burden, loan at most half of annual income</description>
+        <inputEntry id="In_5_0">
+          <text>&gt;= 700</text>
+        </inputEntry>
+        <inputEntry id="In_5_1">
+          <text>&lt;= 0.35</text>
+        </inputEntry>
+        <inputEntry id="In_5_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_5_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_5_4">
+          <text>&lt;= 0.5</text>
+        </inputEntry>
+        <outputEntry id="Out_5_0">
+          <text>"APPROVED"</text>
+        </outputEntry>
+        <outputEntry id="Out_5_1">
+          <text>"Meets all automatic approval criteria"</text>
+        </outputEntry>
+        <outputEntry id="Out_5_2">
+          <text>"LD-5"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_loan_decision_6">
+        <description>Everything else is borderline and needs an officer</description>
+        <inputEntry id="In_6_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_4">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_6_0">
+          <text>"MANUAL_REVIEW"</text>
+        </outputEntry>
+        <outputEntry id="Out_6_1">
+          <text>"Borderline profile - loan officer judgement required"</text>
+        </outputEntry>
+        <outputEntry id="Out_6_2">
+          <text>"LD-6"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_1">
+      <dmndi:DMNShape id="DMNShape_loan-decision" dmnElementRef="loan-decision">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

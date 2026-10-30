@@ -1,0 +1,70 @@
+{
+  "id": "L2-08",
+  "title": "Inventory service outage → incident → service restored → retry → fulfilled",
+  "category": "failure-recovery",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OrderFulfilled",
+    "route": "Validate → Check inventory fails 3× (5 s back-off) → incident → fault off → retry job → reserve → … → fulfilment"
+  },
+  "variables": {
+    "orderId": "ORD-2008",
+    "customerReference": "CUST-0002",
+    "productId": "PRD-1001",
+    "quantity": 3,
+    "deliveryPreference": "STANDARD",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "fault",
+      "name": "inventory-service-down",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "expectIncident",
+      "elementId": "Task_CheckInventory",
+      "timeout": 120
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "07-operate-incident-inventory"
+    },
+    {
+      "do": "fault",
+      "name": "inventory-service-down",
+      "enabled": false
+    },
+    {
+      "do": "retryIncident"
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "09-operate-recovered-inventory"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

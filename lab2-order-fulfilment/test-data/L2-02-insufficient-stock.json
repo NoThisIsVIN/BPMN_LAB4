@@ -1,0 +1,46 @@
+{
+  "id": "L2-02",
+  "title": "Stock insufficient – order cannot proceed to fulfilment",
+  "category": "rejection",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OutOfStock",
+    "route": "Validate → stock check INSUFFICIENT (5 requested, 2 in stock) → notify customer → cancelled"
+  },
+  "variables": {
+    "orderId": "ORD-2002",
+    "customerReference": "CUST-0004",
+    "productId": "PRD-LOW-01",
+    "quantity": 5,
+    "deliveryPreference": "STANDARD",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L2-02"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

@@ -1,0 +1,17 @@
+# Private working notes
+PLAN.md
+
+# Maven build output
+target/
+
+# Node tooling for rendering / screenshots
+scripts/render/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+*.iml
+.vscode/

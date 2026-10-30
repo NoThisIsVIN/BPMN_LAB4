@@ -1,0 +1,41 @@
+### Mock payment gateway (Lab 2) – called by the REST Connector of task "Process payment".
+### Mock tokens only: never send real card numbers or credentials.
+
+### 1. Approved charge
+POST http://localhost:8082/mock/payment-gateway/charges
+Content-Type: application/json
+
+{"orderId": "ORD-API-1", "amount": 215.76, "currency": "EUR", "paymentToken": "tok_test_approve", "customerReference": "CUST-0001"}
+
+### 2. Declined charge (HTTP 200, status DECLINED)
+POST http://localhost:8082/mock/payment-gateway/charges
+Content-Type: application/json
+
+{"orderId": "ORD-API-2", "amount": 553.79, "currency": "EUR", "paymentToken": "tok_test_decline_funds", "customerReference": "CUST-0004"}
+
+### 3. Gateway outage (HTTP 503) – same effect as the fault switch below
+POST http://localhost:8082/mock/payment-gateway/charges
+Content-Type: application/json
+
+{"orderId": "ORD-API-3", "amount": 409.79, "currency": "EUR", "paymentToken": "tok_test_gateway_error", "customerReference": "CUST-0001"}
+
+### 4. Break / repair the gateway (fault injection)
+POST http://localhost:8082/admin/faults/payment-gateway-down?enabled=true
+
+###
+POST http://localhost:8082/admin/faults/payment-gateway-down?enabled=false
+
+### 5. Break / repair the inventory service
+POST http://localhost:8082/admin/faults/inventory-service-down?enabled=true
+
+###
+POST http://localhost:8082/admin/faults/inventory-service-down?enabled=false
+
+### 6. Current fault switches
+GET http://localhost:8082/admin/faults
+
+### 7. Start an order instance via the Camunda REST API
+POST http://localhost:8080/v2/process-instances
+Content-Type: application/json
+
+{"processDefinitionId": "order-fulfilment", "variables": {"orderId": "ORD-HTTP-1", "customerReference": "CUST-0001", "productId": "PRD-1001", "quantity": 2, "deliveryPreference": "STANDARD", "paymentToken": "tok_test_approve"}}

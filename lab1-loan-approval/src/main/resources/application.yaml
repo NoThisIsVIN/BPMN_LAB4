@@ -1,0 +1,27 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: lab1-loan-approval
+
+camunda:
+  client:
+    mode: self-managed
+    grpc-address: http://localhost:26500
+    rest-address: http://localhost:8080
+    auth:
+      method: none
+    worker:
+      defaults:
+        max-jobs-active: 8
+        # all job workers fetch only what they need; see each @JobWorker
+        stream-enabled: true
+
+loan:
+  # Fixed educational APR used to estimate the monthly instalment during validation.
+  reference-apr: 0.09
+
+logging:
+  level:
+    edu.pbj2: INFO

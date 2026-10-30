@@ -1,0 +1,55 @@
+{
+  "id": "L1-04",
+  "title": "Loan above 100 000 goes to manual review, officer rejects",
+  "category": "manual-review",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanRejected",
+    "route": "Validate -> score 731 -> DMN LD-4 Manual review -> officer rejects -> rejection notice -> Loan rejected"
+  },
+  "variables": {
+    "applicationId": "LA-2026-0004",
+    "applicantId": "APP-1004",
+    "fullName": "Synthetic Applicant Delta",
+    "email": "synthetic.applicant.delta@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 15000,
+    "monthlyDebtPayments": 500,
+    "loanAmount": 150000,
+    "loanTermMonths": 120,
+    "loanPurpose": "Commercial property"
+  },
+  "steps": [
+    {
+      "do": "completeTask",
+      "elementId": "Task_ManualReview",
+      "variables": {
+        "officerDecision": "REJECTED",
+        "officerComment": "Loan-to-income ratio 0.83 is too high for an unsecured loan."
+      }
+    },
+    {
+      "do": "wait"
+    }
+  ],
+  "reportVariables": [
+    "validationPassed",
+    "validationErrors",
+    "creditCheckStatus",
+    "creditScore",
+    "creditRiskBand",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "officerDecision",
+    "officerComment"
+  ]
+}

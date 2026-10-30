@@ -1,0 +1,51 @@
+{
+  "id": "L2-01",
+  "title": "Stock available and payment approved",
+  "category": "success",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OrderFulfilled",
+    "route": "Validate → reserve stock → total 215.76 → DMN LOW → no verification → payment APPROVED → fulfilment"
+  },
+  "variables": {
+    "orderId": "ORD-2001",
+    "customerReference": "CUST-0001",
+    "productId": "PRD-1001",
+    "quantity": 2,
+    "deliveryPreference": "STANDARD",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L2-01"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-variables",
+      "name": "10-operate-variables"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

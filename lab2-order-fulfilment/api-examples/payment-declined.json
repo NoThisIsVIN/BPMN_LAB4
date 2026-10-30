@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8082/mock/payment-gateway/charges",
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    "body": {
+      "orderId": "ORD-API-decline_funds",
+      "amount": 215.76,
+      "currency": "EUR",
+      "paymentToken": "tok_test_decline_funds",
+      "customerReference": "CUST-0001"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "transactionId": "TXN-B597323D-B59",
+      "orderId": "ORD-API-decline_funds",
+      "amount": 215.76,
+      "currency": "EUR",
+      "status": "DECLINED",
+      "declineReason": "Insufficient funds",
+      "processedAt": "2026-10-30T17:47:27.249063100+05:30"
+    }
+  }
+}

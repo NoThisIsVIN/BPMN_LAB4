@@ -1,0 +1,57 @@
+### Mock hospital scheduling API (Lab 3) – synthetic data only
+### Works with the VS Code "REST Client" / IntelliJ HTTP client. The JSON files next to this file are
+### real request/response pairs captured from the running application.
+
+@base = http://localhost:8083
+
+### 1. Register an availability request (done by job worker triage.request-availability)
+POST {{base}}/mock/scheduling/availability-requests
+Content-Type: application/json
+
+{
+  "patientReference": "SYN-P-0101",
+  "department": "GENERAL_PRACTICE",
+  "fromDate": "2026-10-30",
+  "toDate": "2026-11-13",
+  "timeOfDay": "MORNING",
+  "urgencyCategory": "ROUTINE"
+}
+
+### 2. Retrieve free slots (this is the call the REST Connector "Retrieve available slots" makes)
+GET {{base}}/mock/scheduling/availability-requests/AR-99CD7EE1/slots
+Accept: application/json
+
+### 3. Book a slot (done by job worker triage.book-appointment)
+POST {{base}}/mock/scheduling/bookings
+Content-Type: application/json
+
+{
+  "availabilityRequestId": "AR-99CD7EE1",
+  "slotId": "GEN-20261031-0800",
+  "patientReference": "SYN-P-0101"
+}
+
+### 4. Fault injection – break the scheduling API (slot query answers HTTP 503)
+POST {{base}}/admin/faults/scheduling-api-down?enabled=true
+
+### 5. Fault injection – repair it
+POST {{base}}/admin/faults/scheduling-api-down?enabled=false
+
+### 6. Current fault switches
+GET {{base}}/admin/faults
+
+### 7. Start a process instance through the Camunda 8 REST API
+POST http://localhost:8080/v2/process-instances
+Content-Type: application/json
+
+{
+  "processDefinitionId": "patient-appointment-triage",
+  "variables": {
+    "patientReference": "SYN-P-0001",
+    "patientAge": 34,
+    "appointmentPreference": { "department": "GENERAL_PRACTICE", "preferredDate": "2026-11-03", "timeOfDay": "MORNING" },
+    "symptomsSummary": "Mild cough and sore throat for a few days",
+    "painLevel": 2,
+    "symptomDurationDays": 3
+  }
+}

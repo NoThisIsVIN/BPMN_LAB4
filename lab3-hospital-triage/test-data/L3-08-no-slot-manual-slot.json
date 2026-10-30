@@ -1,0 +1,65 @@
+{
+  "id": "L3-08",
+  "title": "No slot available, scheduling staff assigns a manual slot",
+  "category": "manual-review",
+  "processId": "patient-appointment-triage",
+  "app": "http://localhost:8083",
+  "expected": {
+    "endEvent": "EndEvent_AppointmentBooked",
+    "route": "slots (0 found) → Resolve scheduling (MANUAL_SLOT) → confirmation"
+  },
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "slotCount",
+    "bookingStatus",
+    "bookingReference",
+    "appointmentSlot"
+  ],
+  "variables": {
+    "patientAge": 38,
+    "appointmentPreference": {
+      "department": "DERMATOLOGY",
+      "preferredDate": "2026-11-03",
+      "timeOfDay": "AFTERNOON"
+    },
+    "symptomsSummary": "Changing mole on the back, painless",
+    "painLevel": 0,
+    "symptomDurationDays": 20,
+    "patientReference": "SYN-P-0008"
+  },
+  "steps": [
+    {
+      "do": "completeTask",
+      "elementId": "Task_PriorityReview",
+      "variables": {
+        "reviewOutcome": "BOOK_APPOINTMENT",
+        "reviewNotes": "Book dermatology review within 5 days"
+      }
+    },
+    {
+      "do": "completeTask",
+      "elementId": "Task_ResolveScheduling",
+      "variables": {
+        "schedulingOutcome": "MANUAL_SLOT",
+        "manualSlot": "2026-11-05 15:00 - Dermatology extra clinic, room 4",
+        "schedulingNotes": "Extra clinic session opened by scheduling lead"
+      }
+    },
+    {
+      "do": "sleep",
+      "seconds": 5
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L3-08",
+      "waitFor": "parked"
+    }
+  ]
+}

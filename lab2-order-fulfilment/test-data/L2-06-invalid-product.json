@@ -1,0 +1,41 @@
+{
+  "id": "L2-06",
+  "title": "Invalid product ID – order rejected by validation",
+  "category": "validation",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OrderRejected",
+    "route": "Validate → orderValid=false (unknown product) → notify customer → rejected"
+  },
+  "variables": {
+    "orderId": "ORD-2006",
+    "customerReference": "CUST-0001",
+    "productId": "PRD-9999",
+    "quantity": 1,
+    "deliveryPreference": "STANDARD",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "wait"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

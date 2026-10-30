@@ -1,0 +1,73 @@
+{
+  "id": "L3-02",
+  "title": "Moderate pain routed to priority staff review, staff books",
+  "category": "manual-review",
+  "processId": "patient-appointment-triage",
+  "app": "http://localhost:8083",
+  "expected": {
+    "endEvent": "EndEvent_AppointmentBooked",
+    "route": "DMN PRIORITY_REVIEW (TR-5) → Priority staff review (BOOK_APPOINTMENT) → slots → book → confirmation"
+  },
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "slotCount",
+    "bookingStatus",
+    "bookingReference",
+    "appointmentSlot"
+  ],
+  "variables": {
+    "patientAge": 52,
+    "appointmentPreference": {
+      "department": "ORTHOPAEDICS",
+      "preferredDate": "2026-11-03",
+      "timeOfDay": "AFTERNOON"
+    },
+    "symptomsSummary": "Knee pain after a fall, swelling when walking",
+    "painLevel": 6,
+    "symptomDurationDays": 10,
+    "patientReference": "SYN-P-0002"
+  },
+  "steps": [
+    {
+      "do": "screenshot",
+      "view": "tasklist-list",
+      "name": "05-tasklist-task-list",
+      "waitFor": "parked"
+    },
+    {
+      "do": "screenshot",
+      "view": "tasklist-task",
+      "name": "06-tasklist-task-form",
+      "waitFor": "parked"
+    },
+    {
+      "do": "completeTask",
+      "elementId": "Task_PriorityReview",
+      "variables": {
+        "reviewOutcome": "BOOK_APPOINTMENT",
+        "reviewNotes": "Stable, book orthopaedic appointment within 3 days"
+      },
+      "ui": {
+        "radio": "Book an appointment within the target window",
+        "textarea": "Stable, book orthopaedic appointment within 3 days"
+      },
+      "screenshot": "06-tasklist-task-form-priority-review"
+    },
+    {
+      "do": "sleep",
+      "seconds": 5
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L3-02",
+      "waitFor": "parked"
+    }
+  ]
+}

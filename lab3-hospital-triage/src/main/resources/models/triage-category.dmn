@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_triage-category" name="Triage category" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.49.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <decision id="triage-category" name="Triage category">
+    <description>Predefined EDUCATIONAL triage rules for a synthetic scenario - not clinical guidance. FIRST hit policy: the most urgent rules are listed first, the catch-all Routine rule last.</description>
+    <decisionTable id="DecisionTable_triage-category" hitPolicy="FIRST">
+      <input id="Input_chestPain" label="Chest pain">
+        <inputExpression id="InputExpression_chestPain" typeRef="boolean">
+          <text>chestPain</text>
+        </inputExpression>
+      </input>
+      <input id="Input_breathing" label="Breathing difficulty">
+        <inputExpression id="InputExpression_breathing" typeRef="boolean">
+          <text>breathingDifficulty</text>
+        </inputExpression>
+      </input>
+      <input id="Input_pain" label="Pain level (0-10)">
+        <inputExpression id="InputExpression_pain" typeRef="number">
+          <text>painLevel</text>
+        </inputExpression>
+      </input>
+      <input id="Input_fever" label="High fever">
+        <inputExpression id="InputExpression_fever" typeRef="boolean">
+          <text>highFever</text>
+        </inputExpression>
+      </input>
+      <input id="Input_age" label="Patient age">
+        <inputExpression id="InputExpression_age" typeRef="number">
+          <text>patientAge</text>
+        </inputExpression>
+      </input>
+      <input id="Input_duration" label="Symptom duration (days)">
+        <inputExpression id="InputExpression_duration" typeRef="number">
+          <text>symptomDurationDays</text>
+        </inputExpression>
+      </input>
+      <output id="Output_category" label="Urgency category" name="urgencyCategory" typeRef="string">
+        <outputValues id="OutputValues_category">
+          <text>"ROUTINE","PRIORITY_REVIEW","URGENT_ASSESSMENT"</text>
+        </outputValues>
+      </output>
+      <output id="Output_reason" label="Triage reason" name="triageReason" typeRef="string">
+      </output>
+      <output id="Output_wait" label="Max wait (days)" name="maxWaitDays" typeRef="number">
+      </output>
+      <output id="Output_ruleId" label="Rule ID" name="ruleId" typeRef="string">
+      </output>
+      <rule id="Rule_triage_category_1">
+        <description>Red flag: chest pain always needs immediate human assessment</description>
+        <inputEntry id="In_1_0">
+          <text>true</text>
+        </inputEntry>
+        <inputEntry id="In_1_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_1_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_1_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_1_4">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_1_5">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_1_0">
+          <text>"URGENT_ASSESSMENT"</text>
+        </outputEntry>
+        <outputEntry id="Out_1_1">
+          <text>"Chest pain reported"</text>
+        </outputEntry>
+        <outputEntry id="Out_1_2">
+          <text>0</text>
+        </outputEntry>
+        <outputEntry id="Out_1_3">
+          <text>"TR-1"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_triage_category_2">
+        <description>Red flag: breathing difficulty</description>
+        <inputEntry id="In_2_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_2_1">
+          <text>true</text>
+        </inputEntry>
+        <inputEntry id="In_2_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_2_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_2_4">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_2_5">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_2_0">
+          <text>"URGENT_ASSESSMENT"</text>
+        </outputEntry>
+        <outputEntry id="Out_2_1">
+          <text>"Breathing difficulty reported"</text>
+        </outputEntry>
+        <outputEntry id="Out_2_2">
+          <text>0</text>
+        </outputEntry>
+        <outputEntry id="Out_2_3">
+          <text>"TR-2"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_triage_category_3">
+        <description>Severe pain (8-10)</description>
+        <inputEntry id="In_3_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_3_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_3_2">
+          <text>&gt;= 8</text>
+        </inputEntry>
+        <inputEntry id="In_3_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_3_4">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_3_5">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_3_0">
+          <text>"URGENT_ASSESSMENT"</text>
+        </outputEntry>
+        <outputEntry id="Out_3_1">
+          <text>"Severe pain (8 or more out of 10)"</text>
+        </outputEntry>
+        <outputEntry id="Out_3_2">
+          <text>0</text>
+        </outputEntry>
+        <outputEntry id="Out_3_3">
+          <text>"TR-3"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_triage_category_4">
+        <description>High fever in an older patient (65+) is reviewed by staff within 2 days</description>
+        <inputEntry id="In_4_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_4_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_4_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_4_3">
+          <text>true</text>
+        </inputEntry>
+        <inputEntry id="In_4_4">
+          <text>&gt;= 65</text>
+        </inputEntry>
+        <inputEntry id="In_4_5">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_4_0">
+          <text>"PRIORITY_REVIEW"</text>
+        </outputEntry>
+        <outputEntry id="Out_4_1">
+          <text>"High fever in patient aged 65 or over"</text>
+        </outputEntry>
+        <outputEntry id="Out_4_2">
+          <text>2</text>
+        </outputEntry>
+        <outputEntry id="Out_4_3">
+          <text>"TR-4"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_triage_category_5">
+        <description>Moderate pain (5-7) is reviewed by staff within 3 days</description>
+        <inputEntry id="In_5_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_5_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_5_2">
+          <text>[5..7]</text>
+        </inputEntry>
+        <inputEntry id="In_5_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_5_4">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_5_5">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_5_0">
+          <text>"PRIORITY_REVIEW"</text>
+        </outputEntry>
+        <outputEntry id="Out_5_1">
+          <text>"Moderate pain (5-7 out of 10)"</text>
+        </outputEntry>
+        <outputEntry id="Out_5_2">
+          <text>3</text>
+        </outputEntry>
+        <outputEntry id="Out_5_3">
+          <text>"TR-5"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_triage_category_6">
+        <description>Symptoms lasting more than two weeks are reviewed within 5 days</description>
+        <inputEntry id="In_6_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_4">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_5">
+          <text>&gt; 14</text>
+        </inputEntry>
+        <outputEntry id="Out_6_0">
+          <text>"PRIORITY_REVIEW"</text>
+        </outputEntry>
+        <outputEntry id="Out_6_1">
+          <text>"Symptoms persisting for more than 14 days"</text>
+        </outputEntry>
+        <outputEntry id="Out_6_2">
+          <text>5</text>
+        </outputEntry>
+        <outputEntry id="Out_6_3">
+          <text>"TR-6"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_triage_category_7">
+        <description>No red flags or priority indicators: routine appointment within 14 days</description>
+        <inputEntry id="In_7_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_7_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_7_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_7_3">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_7_4">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_7_5">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_7_0">
+          <text>"ROUTINE"</text>
+        </outputEntry>
+        <outputEntry id="Out_7_1">
+          <text>"No urgency indicators present"</text>
+        </outputEntry>
+        <outputEntry id="Out_7_2">
+          <text>14</text>
+        </outputEntry>
+        <outputEntry id="Out_7_3">
+          <text>"TR-7"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_1">
+      <dmndi:DMNShape id="DMNShape_triage-category" dmnElementRef="triage-category">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

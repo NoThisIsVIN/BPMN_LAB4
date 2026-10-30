@@ -1,0 +1,64 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.8.0",
+  "exporter": { "name": "Camunda Modeler", "version": "5.49.0" },
+  "schemaVersion": 18,
+  "id": "priority-review-form",
+  "type": "default",
+  "components": [
+    {
+      "id": "Text_Header",
+      "type": "text",
+      "text": "# Priority staff review\nPatient **{{patientReference}}**, age {{patientAge}}, requested department **{{department}}**"
+    },
+    {
+      "id": "Text_Disclaimer",
+      "type": "text",
+      "text": "> ⚠ **Synthetic educational scenario – not clinical guidance.** All patient data is fictitious."
+    },
+    {
+      "id": "Group_Triage",
+      "type": "group",
+      "label": "Why is this a priority review?",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Triage",
+          "type": "text",
+          "text": "DMN rule **{{triageResult.ruleId}}**: {{triageReason}}\n\nTarget: appointment within **{{maxWaitDays}}** day(s)."
+        }
+      ]
+    },
+    {
+      "id": "Group_Symptoms",
+      "type": "group",
+      "label": "Reported symptoms",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Symptoms",
+          "type": "text",
+          "text": "{{symptomsSummary}}\n\n| Indicator | Value |\n|---|---|\n| Pain level (0-10) | {{painLevel}} |\n| High fever | {{highFever}} |\n| Symptom duration (days) | {{symptomDurationDays}} |\n| Chronic condition | {{chronicCondition}} |\n| Preferred date | {{preferredDate}} ({{timeOfDay}}) |"
+        }
+      ]
+    },
+    {
+      "id": "Field_ReviewOutcome",
+      "type": "radio",
+      "label": "Review outcome",
+      "key": "reviewOutcome",
+      "values": [
+        { "label": "Book an appointment within the target window", "value": "BOOK_APPOINTMENT" },
+        { "label": "Escalate to immediate clinical assessment", "value": "ESCALATE_URGENT" }
+      ],
+      "validate": { "required": true }
+    },
+    {
+      "id": "Field_ReviewNotes",
+      "type": "textarea",
+      "label": "Review notes",
+      "key": "reviewNotes",
+      "validate": { "required": true, "minLength": 5 }
+    }
+  ]
+}

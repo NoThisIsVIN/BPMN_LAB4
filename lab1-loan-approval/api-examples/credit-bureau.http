@@ -1,0 +1,40 @@
+### Mock credit bureau - called by the REST Connector "Request credit assessment"
+POST http://localhost:8081/mock/credit-bureau/assessments
+Content-Type: application/json
+
+< ./credit-assessment-request.json
+
+### Error case: HTTP 500 (routes the instance to manual review via BPMN error CREDIT_API_ERROR)
+POST http://localhost:8081/mock/credit-bureau/assessments
+Content-Type: application/json
+
+{"applicationId": "LA-2026-0006", "applicantId": "APP-ERR-500"}
+
+### Timeout case: answers after 8 s, the connector read timeout is 5 s (HTTP 408 in the error expression)
+POST http://localhost:8081/mock/credit-bureau/assessments
+Content-Type: application/json
+
+{"applicationId": "LA-2026-0007", "applicantId": "APP-TIMEOUT"}
+
+### Fault injection: break / repair dependencies for the incident demo
+GET http://localhost:8081/admin/faults
+
+###
+POST http://localhost:8081/admin/faults/validation-reference-data?enabled=true
+
+###
+POST http://localhost:8081/admin/faults/validation-reference-data?enabled=false
+
+### Start a process instance through the Orchestration Cluster API (Camunda 8 Run, unprotected local API)
+POST http://localhost:8080/v2/process-instances
+Content-Type: application/json
+
+{
+  "processDefinitionId": "loan-approval",
+  "variables": {
+    "applicationId": "LA-2026-0100", "applicantId": "APP-1001", "fullName": "Synthetic Applicant Alpha",
+    "email": "synthetic.applicant.alpha@example.org", "age": 35, "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 6200, "monthlyDebtPayments": 400, "loanAmount": 25000, "loanTermMonths": 60,
+    "loanPurpose": "Home renovation"
+  }
+}

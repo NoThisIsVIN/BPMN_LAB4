@@ -1,0 +1,64 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.8.0",
+  "exporter": { "name": "Camunda Modeler", "version": "5.49.0" },
+  "schemaVersion": 18,
+  "id": "urgent-assessment-form",
+  "type": "default",
+  "components": [
+    {
+      "id": "Text_Header",
+      "type": "text",
+      "text": "# Immediate clinical assessment\nPatient **{{patientReference}}**, age {{patientAge}}, department **{{department}}**"
+    },
+    {
+      "id": "Text_Disclaimer",
+      "type": "text",
+      "text": "> ⚠ **Synthetic educational scenario – not clinical guidance.** All patient data is fictitious."
+    },
+    {
+      "id": "Group_Triage",
+      "type": "group",
+      "label": "Triage result",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Triage",
+          "type": "text",
+          "text": "| Field | Value |\n|---|---|\n| Urgency category | **{{urgencyCategory}}** |\n| Triage reason | {{triageReason}} |\n| DMN rule | {{triageResult.ruleId}} |\n| Priority review notes (if escalated) | {{reviewNotes}} |"
+        }
+      ]
+    },
+    {
+      "id": "Group_Symptoms",
+      "type": "group",
+      "label": "Reported symptoms",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Symptoms",
+          "type": "text",
+          "text": "{{symptomsSummary}}\n\n| Indicator | Value |\n|---|---|\n| Pain level (0-10) | {{painLevel}} |\n| Chest pain | {{chestPain}} |\n| Breathing difficulty | {{breathingDifficulty}} |\n| High fever | {{highFever}} |\n| Symptom duration (days) | {{symptomDurationDays}} |\n| Chronic condition | {{chronicCondition}} |"
+        }
+      ]
+    },
+    {
+      "id": "Field_AssessmentOutcome",
+      "type": "radio",
+      "label": "Assessment outcome",
+      "key": "assessmentOutcome",
+      "values": [
+        { "label": "Refer to emergency department now", "value": "EMERGENCY_REFERRAL" },
+        { "label": "Book an urgent same-day slot", "value": "BOOK_URGENT_SLOT" }
+      ],
+      "validate": { "required": true }
+    },
+    {
+      "id": "Field_AssessmentNotes",
+      "type": "textarea",
+      "label": "Assessment notes",
+      "key": "assessmentNotes",
+      "validate": { "required": true, "minLength": 5 }
+    }
+  ]
+}

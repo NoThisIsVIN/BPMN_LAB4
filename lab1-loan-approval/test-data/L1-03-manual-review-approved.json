@@ -1,0 +1,76 @@
+{
+  "id": "L1-03",
+  "title": "Borderline score goes to manual review, officer approves in Tasklist",
+  "category": "manual-review",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanApproved",
+    "route": "Validate -> score 648 -> DMN LD-6 Manual review -> officer approves -> offer -> Loan approved"
+  },
+  "variables": {
+    "applicationId": "LA-2026-0003",
+    "applicantId": "APP-1003",
+    "fullName": "Synthetic Applicant Charlie",
+    "email": "synthetic.applicant.charlie@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 5400,
+    "monthlyDebtPayments": 900,
+    "loanAmount": 30000,
+    "loanTermMonths": 72,
+    "loanPurpose": "Debt consolidation"
+  },
+  "steps": [
+    {
+      "do": "screenshot",
+      "view": "tasklist-list",
+      "name": "05-tasklist-task-list",
+      "waitFor": "parked"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L1-03-waiting-for-review"
+    },
+    {
+      "do": "completeTask",
+      "elementId": "Task_ManualReview",
+      "variables": {
+        "officerDecision": "APPROVED",
+        "officerComment": "Stable employment, affordable instalment; approved with standard terms."
+      },
+      "ui": {
+        "radio": "Approve loan",
+        "textarea": "Stable employment, affordable instalment; approved with standard terms."
+      },
+      "screenshot": "06-tasklist-task-form"
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L1-03-approved-after-review"
+    }
+  ],
+  "reportVariables": [
+    "validationPassed",
+    "validationErrors",
+    "creditCheckStatus",
+    "creditScore",
+    "creditRiskBand",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "officerDecision",
+    "officerComment"
+  ]
+}

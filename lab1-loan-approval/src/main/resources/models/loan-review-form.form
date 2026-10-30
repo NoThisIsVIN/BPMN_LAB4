@@ -1,0 +1,72 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.8.0",
+  "exporter": { "name": "Camunda Modeler", "version": "5.49.0" },
+  "schemaVersion": 18,
+  "id": "loan-review-form",
+  "type": "default",
+  "components": [
+    {
+      "id": "Text_Header",
+      "type": "text",
+      "text": "# Loan application review\nApplication **{{applicationId}}** for **{{fullName}}** ({{applicantId}})"
+    },
+    {
+      "id": "Group_Application",
+      "type": "group",
+      "label": "Application",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Application",
+          "type": "text",
+          "text": "| Field | Value |\n|---|---|\n| Requested amount | {{loanAmount}} |\n| Term (months) | {{loanTermMonths}} |\n| Purpose | {{loanPurpose}} |\n| Employment | {{employmentStatus}} |\n| Monthly income | {{monthlyIncome}} |\n| Existing monthly debt | {{monthlyDebtPayments}} |\n| New monthly instalment | {{monthlyInstallment}} |\n| Debt-to-income ratio | {{debtToIncomeRatio}} |\n| Loan-to-income ratio | {{loanToIncomeRatio}} |"
+        }
+      ]
+    },
+    {
+      "id": "Group_Credit",
+      "type": "group",
+      "label": "Credit assessment",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Credit",
+          "type": "text",
+          "text": "| Field | Value |\n|---|---|\n| Credit check status | **{{creditCheckStatus}}** |\n| Credit score | {{creditScore}} |\n| Risk band | {{creditRiskBand}} |\n| Bureau reference | {{creditBureauReference}} |\n| Credit check error | {{creditCheckError}} |"
+        }
+      ]
+    },
+    {
+      "id": "Group_Automated",
+      "type": "group",
+      "label": "Why is this in manual review?",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Automated",
+          "type": "text",
+          "text": "DMN rule **{{loanDecision.ruleId}}**: {{loanDecision.reason}}\n\n_If the credit check status is UNAVAILABLE, the credit bureau failed and no automated decision was made._"
+        }
+      ]
+    },
+    {
+      "id": "Field_OfficerDecision",
+      "type": "radio",
+      "label": "Officer decision",
+      "key": "officerDecision",
+      "values": [
+        { "label": "Approve loan", "value": "APPROVED" },
+        { "label": "Reject loan", "value": "REJECTED" }
+      ],
+      "validate": { "required": true }
+    },
+    {
+      "id": "Field_OfficerComment",
+      "type": "textarea",
+      "label": "Justification (shown in the decision record)",
+      "key": "officerComment",
+      "validate": { "required": true, "minLength": 5 }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.8.0",
+  "exporter": { "name": "Camunda Modeler", "version": "5.49.0" },
+  "schemaVersion": 18,
+  "id": "scheduling-resolution-form",
+  "type": "default",
+  "components": [
+    {
+      "id": "Text_Header",
+      "type": "text",
+      "text": "# Resolve scheduling – no suitable slot\nPatient **{{patientReference}}** needs a **{{department}}** appointment ({{urgencyCategory}})."
+    },
+    {
+      "id": "Text_Disclaimer",
+      "type": "text",
+      "text": "> ⚠ **Synthetic educational scenario – not clinical guidance.** All patient data is fictitious."
+    },
+    {
+      "id": "Group_Search",
+      "type": "group",
+      "label": "Automatic slot search",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Search",
+          "type": "text",
+          "text": "| Field | Value |\n|---|---|\n| Availability request | {{availabilityRequestId}} |\n| Search window | {{searchFromDate}} → {{searchToDate}} |\n| Time of day | {{timeOfDay}} |\n| Slots found | **{{slotCount}}** |\n| Max wait (days) | {{maxWaitDays}} |"
+        }
+      ]
+    },
+    {
+      "id": "Field_SchedulingOutcome",
+      "type": "radio",
+      "label": "Scheduling outcome",
+      "key": "schedulingOutcome",
+      "values": [
+        { "label": "Assign a slot manually (e.g. extra clinic)", "value": "MANUAL_SLOT" },
+        { "label": "Add the patient to the waiting list", "value": "WAITLIST" }
+      ],
+      "validate": { "required": true }
+    },
+    {
+      "id": "Field_ManualSlot",
+      "type": "textfield",
+      "label": "Manually assigned slot (date, time, location)",
+      "key": "manualSlot",
+      "description": "Required when assigning a slot manually",
+      "conditional": { "hide": "=schedulingOutcome != \"MANUAL_SLOT\"" }
+    },
+    {
+      "id": "Field_SchedulingNotes",
+      "type": "textarea",
+      "label": "Notes",
+      "key": "schedulingNotes",
+      "validate": { "required": true, "minLength": 5 }
+    }
+  ]
+}

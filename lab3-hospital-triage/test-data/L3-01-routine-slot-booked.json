@@ -1,0 +1,44 @@
+{
+  "id": "L3-01",
+  "title": "Routine request with an available slot",
+  "category": "success",
+  "processId": "patient-appointment-triage",
+  "app": "http://localhost:8083",
+  "expected": {
+    "endEvent": "EndEvent_AppointmentBooked",
+    "route": "Validate → DMN ROUTINE (TR-7) → request availability → REST slots (found) → book → confirmation"
+  },
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "slotCount",
+    "bookingStatus",
+    "bookingReference",
+    "appointmentSlot"
+  ],
+  "variables": {
+    "patientAge": 34,
+    "appointmentPreference": {
+      "department": "GENERAL_PRACTICE",
+      "preferredDate": "2026-11-03",
+      "timeOfDay": "MORNING"
+    },
+    "symptomsSummary": "Mild cough and sore throat for a few days",
+    "painLevel": 2,
+    "symptomDurationDays": 3,
+    "patientReference": "SYN-P-0001"
+  },
+  "steps": [
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L3-01",
+      "waitFor": "parked"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: lab2-order-fulfilment
+
+camunda:
+  client:
+    mode: self-managed
+    grpc-address: http://localhost:26500
+    rest-address: http://localhost:8080
+    auth:
+      method: none
+    worker:
+      defaults:
+        max-jobs-active: 8
+        stream-enabled: true
+
+logging:
+  level:
+    edu.pbj2: INFO

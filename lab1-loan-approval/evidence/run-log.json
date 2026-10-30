@@ -1,0 +1,661 @@
+[
+  {
+    "id": "L1-01",
+    "title": "Strong applicant is approved automatically",
+    "category": "success",
+    "expected": {
+      "endEvent": "EndEvent_LoanApproved",
+      "route": "Validate -> credit score 762 -> DMN LD-5 Approved -> offer -> notify -> Loan approved"
+    },
+    "startedAt": "2026-10-30T17:36:40",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L1-01-approved.png"
+    ],
+    "processInstanceKey": "2251799813704627",
+    "final": {
+      "processInstanceKey": "2251799813704627",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_CreditAssessment(COMPLETED)",
+        "Task_LoanDecision(COMPLETED)",
+        "Gateway_DecisionOutcome(COMPLETED)",
+        "Gateway_JoinApproval(COMPLETED)",
+        "Gateway_LoanApproved(COMPLETED)",
+        "Task_GenerateOffer(COMPLETED)",
+        "Task_NotifyApproved(COMPLETED)",
+        "EndEvent_LoanApproved(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_LoanApproved"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": true,
+      "validationErrors": [],
+      "creditCheckStatus": "COMPLETED",
+      "creditScore": 762,
+      "creditRiskBand": "A",
+      "creditCheckError": null,
+      "debtToIncomeRatio": 0.1482,
+      "loanToIncomeRatio": 0.336,
+      "loanDecision": {
+        "outcome": "APPROVED",
+        "reason": "Meets all automatic approval criteria",
+        "ruleId": "LD-5"
+      },
+      "finalDecision": "APPROVED",
+      "decisionSource": "AUTOMATED (DMN)",
+      "decisionReason": "Meets all automatic approval criteria",
+      "offerId": "OFF-LA-2026-0001",
+      "interestRate": 0.065
+    },
+    "actualEndEvents": [
+      "EndEvent_LoanApproved"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L1-02",
+    "title": "Low credit score is rejected by the DMN",
+    "category": "rejection",
+    "expected": {
+      "endEvent": "EndEvent_LoanRejected",
+      "route": "Validate -> credit score 512 -> DMN LD-1 Rejected -> rejection notice -> Loan rejected"
+    },
+    "startedAt": "2026-10-30T17:36:51",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L1-02-rejected.png"
+    ],
+    "processInstanceKey": "2251799813704821",
+    "final": {
+      "processInstanceKey": "2251799813704821",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_CreditAssessment(COMPLETED)",
+        "Task_LoanDecision(COMPLETED)",
+        "Gateway_DecisionOutcome(COMPLETED)",
+        "Gateway_JoinRejection(COMPLETED)",
+        "Task_NotifyRejected(COMPLETED)",
+        "EndEvent_LoanRejected(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_LoanRejected"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": true,
+      "validationErrors": [],
+      "creditCheckStatus": "COMPLETED",
+      "creditScore": 512,
+      "creditRiskBand": "E",
+      "creditCheckError": null,
+      "debtToIncomeRatio": 0.2678,
+      "loanToIncomeRatio": 0.3659,
+      "loanDecision": {
+        "outcome": "REJECTED",
+        "reason": "Credit score below minimum of 550",
+        "ruleId": "LD-1"
+      },
+      "finalDecision": "REJECTED",
+      "decisionSource": "AUTOMATED (DMN)",
+      "decisionReason": "Credit score below minimum of 550",
+      "offerId": null,
+      "interestRate": null
+    },
+    "actualEndEvents": [
+      "EndEvent_LoanRejected"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L1-03",
+    "title": "Borderline score goes to manual review, officer approves in Tasklist",
+    "category": "manual-review",
+    "expected": {
+      "endEvent": "EndEvent_LoanApproved",
+      "route": "Validate -> score 648 -> DMN LD-6 Manual review -> officer approves -> offer -> Loan approved"
+    },
+    "startedAt": "2026-10-30T17:40:44",
+    "actions": [
+      "completed user task Task_ManualReview in the Tasklist UI with {'radio': 'Approve loan', 'textarea': 'Stable employment, affordable instalment; approved with standard terms.'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/05-tasklist-task-list.png",
+      "evidence/screenshots/04-operate-instance-L1-03-waiting-for-review.png",
+      "evidence/screenshots/06-tasklist-task-form.png",
+      "evidence/screenshots/06-tasklist-task-form-completed.png",
+      "evidence/screenshots/04-operate-instance-L1-03-approved-after-review.png"
+    ],
+    "processInstanceKey": "2251799813707533",
+    "final": {
+      "processInstanceKey": "2251799813707533",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_CreditAssessment(COMPLETED)",
+        "Task_LoanDecision(COMPLETED)",
+        "Gateway_DecisionOutcome(COMPLETED)",
+        "Gateway_JoinReview(COMPLETED)",
+        "Task_ManualReview(COMPLETED)",
+        "Gateway_JoinApproval(COMPLETED)",
+        "Gateway_LoanApproved(COMPLETED)",
+        "Task_GenerateOffer(COMPLETED)",
+        "Task_NotifyApproved(COMPLETED)",
+        "EndEvent_LoanApproved(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_LoanApproved"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": true,
+      "validationErrors": [],
+      "creditCheckStatus": "COMPLETED",
+      "creditScore": 648,
+      "creditRiskBand": "D",
+      "creditCheckError": null,
+      "debtToIncomeRatio": 0.2668,
+      "loanToIncomeRatio": 0.463,
+      "loanDecision": {
+        "outcome": "MANUAL_REVIEW",
+        "reason": "Borderline profile - loan officer judgement required",
+        "ruleId": "LD-6"
+      },
+      "finalDecision": "APPROVED",
+      "decisionSource": "LOAN OFFICER",
+      "decisionReason": "Stable employment, affordable instalment; approved with standard terms.",
+      "offerId": "OFF-LA-2026-0003",
+      "interestRate": 0.119,
+      "officerDecision": "APPROVED",
+      "officerComment": "Stable employment, affordable instalment; approved with standard terms."
+    },
+    "actualEndEvents": [
+      "EndEvent_LoanApproved"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L1-04",
+    "title": "Loan above 100 000 goes to manual review, officer rejects",
+    "category": "manual-review",
+    "expected": {
+      "endEvent": "EndEvent_LoanRejected",
+      "route": "Validate -> score 731 -> DMN LD-4 Manual review -> officer rejects -> rejection notice -> Loan rejected"
+    },
+    "startedAt": "2026-10-30T17:37:30",
+    "actions": [
+      "completed user task Task_ManualReview via REST API with {'officerDecision': 'REJECTED', 'officerComment': 'Loan-to-income ratio 0.83 is too high for an unsecured loan.'}"
+    ],
+    "screenshots": [],
+    "processInstanceKey": "2251799813705131",
+    "final": {
+      "processInstanceKey": "2251799813705131",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_CreditAssessment(COMPLETED)",
+        "Task_LoanDecision(COMPLETED)",
+        "Gateway_DecisionOutcome(COMPLETED)",
+        "Gateway_JoinReview(COMPLETED)",
+        "Task_ManualReview(COMPLETED)",
+        "Gateway_JoinApproval(COMPLETED)",
+        "Gateway_LoanApproved(COMPLETED)",
+        "Gateway_JoinRejection(COMPLETED)",
+        "Task_NotifyRejected(COMPLETED)",
+        "EndEvent_LoanRejected(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_LoanRejected"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": true,
+      "validationErrors": [],
+      "creditCheckStatus": "COMPLETED",
+      "creditScore": 731,
+      "creditRiskBand": "B",
+      "creditCheckError": null,
+      "debtToIncomeRatio": 0.16,
+      "loanToIncomeRatio": 0.8333,
+      "loanDecision": {
+        "outcome": "MANUAL_REVIEW",
+        "reason": "Amount above automatic approval limit of 100 000",
+        "ruleId": "LD-4"
+      },
+      "finalDecision": "REJECTED",
+      "decisionSource": "LOAN OFFICER",
+      "decisionReason": "Loan-to-income ratio 0.83 is too high for an unsecured loan.",
+      "offerId": null,
+      "interestRate": null,
+      "officerDecision": "REJECTED",
+      "officerComment": "Loan-to-income ratio 0.83 is too high for an unsecured loan."
+    },
+    "actualEndEvents": [
+      "EndEvent_LoanRejected"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L1-05",
+    "title": "Missing e-mail and under-age applicant fail validation",
+    "category": "validation",
+    "expected": {
+      "endEvent": "EndEvent_InvalidData",
+      "route": "Validate -> validationPassed=false -> notify incomplete -> Application rejected (invalid data)"
+    },
+    "startedAt": "2026-10-30T17:37:38",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L1-05-invalid-data.png"
+    ],
+    "processInstanceKey": "2251799813705233",
+    "final": {
+      "processInstanceKey": "2251799813705233",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_NotifyIncomplete(COMPLETED)",
+        "EndEvent_InvalidData(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_InvalidData"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": false,
+      "validationErrors": [
+        "email is required",
+        "age must be between 18 and 75 (was 16)"
+      ],
+      "creditCheckStatus": null,
+      "creditScore": null,
+      "creditRiskBand": null,
+      "creditCheckError": null,
+      "debtToIncomeRatio": null,
+      "loanToIncomeRatio": null,
+      "loanDecision": null,
+      "finalDecision": null,
+      "decisionSource": null,
+      "decisionReason": null,
+      "offerId": null,
+      "interestRate": null
+    },
+    "actualEndEvents": [
+      "EndEvent_InvalidData"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L1-06",
+    "title": "Credit bureau returns HTTP 500 -> manual review -> officer approves",
+    "category": "failure-recovery",
+    "expected": {
+      "endEvent": "EndEvent_LoanApproved",
+      "route": "Validate -> REST HTTP 500 -> error boundary CREDIT_API_ERROR -> manual review -> approve -> Loan approved"
+    },
+    "startedAt": "2026-10-30T17:37:50",
+    "actions": [
+      "completed user task Task_ManualReview via REST API with {'officerDecision': 'APPROVED', 'officerComment': 'Bureau unavailable; payslips and bank statements verified manually.'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L1-06-credit-api-error.png"
+    ],
+    "processInstanceKey": "2251799813705314",
+    "final": {
+      "processInstanceKey": "2251799813705314",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_CreditAssessment(TERMINATED)",
+        "Boundary_CreditApiError(COMPLETED)",
+        "Gateway_JoinReview(COMPLETED)",
+        "Task_ManualReview(COMPLETED)",
+        "Gateway_JoinApproval(COMPLETED)",
+        "Gateway_LoanApproved(COMPLETED)",
+        "Task_GenerateOffer(COMPLETED)",
+        "Task_NotifyApproved(COMPLETED)",
+        "EndEvent_LoanApproved(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_LoanApproved"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": true,
+      "validationErrors": [],
+      "creditCheckStatus": "UNAVAILABLE",
+      "creditScore": null,
+      "creditRiskBand": null,
+      "creditCheckError": "HTTP 500: Internal scoring engine error",
+      "debtToIncomeRatio": 0.1595,
+      "loanToIncomeRatio": 0.3333,
+      "loanDecision": null,
+      "finalDecision": "APPROVED",
+      "decisionSource": "LOAN OFFICER",
+      "decisionReason": "Bureau unavailable; payslips and bank statements verified manually.",
+      "offerId": "OFF-LA-2026-0006",
+      "interestRate": 0.109,
+      "creditApiErrorCode": "500",
+      "officerDecision": "APPROVED"
+    },
+    "actualEndEvents": [
+      "EndEvent_LoanApproved"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L1-07",
+    "title": "Credit bureau times out (8 s > 5 s limit) -> manual review -> officer rejects",
+    "category": "failure-recovery",
+    "expected": {
+      "endEvent": "EndEvent_LoanRejected",
+      "route": "Validate -> REST timeout (HTTP 408) -> error boundary -> manual review -> reject -> Loan rejected"
+    },
+    "startedAt": "2026-10-30T17:38:04",
+    "actions": [
+      "completed user task Task_ManualReview via REST API with {'officerDecision': 'REJECTED', 'officerComment': 'No credit data and instalment too high relative to income.'}"
+    ],
+    "screenshots": [],
+    "processInstanceKey": "2251799813705452",
+    "final": {
+      "processInstanceKey": "2251799813705452",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_CreditAssessment(TERMINATED)",
+        "Boundary_CreditApiError(COMPLETED)",
+        "Gateway_JoinReview(COMPLETED)",
+        "Task_ManualReview(COMPLETED)",
+        "Gateway_JoinApproval(COMPLETED)",
+        "Gateway_LoanApproved(COMPLETED)",
+        "Gateway_JoinRejection(COMPLETED)",
+        "Task_NotifyRejected(COMPLETED)",
+        "EndEvent_LoanRejected(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_LoanRejected"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": true,
+      "validationErrors": [],
+      "creditCheckStatus": "UNAVAILABLE",
+      "creditScore": null,
+      "creditRiskBand": null,
+      "creditCheckError": "HTTP 408: The request timed out. Please try increasing the read and connection timeouts.",
+      "debtToIncomeRatio": 0.3845,
+      "loanToIncomeRatio": 0.4701,
+      "loanDecision": null,
+      "finalDecision": "REJECTED",
+      "decisionSource": "LOAN OFFICER",
+      "decisionReason": "No credit data and instalment too high relative to income.",
+      "offerId": null,
+      "interestRate": null,
+      "creditApiErrorCode": "408",
+      "officerDecision": "REJECTED"
+    },
+    "actualEndEvents": [
+      "EndEvent_LoanRejected"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L1-08",
+    "title": "Validation worker dependency down -> incident -> repaired -> retried -> approved",
+    "category": "failure-recovery",
+    "expected": {
+      "endEvent": "EndEvent_LoanApproved",
+      "route": "Validate fails 3x (5 s back-off) -> INCIDENT -> fault switched off -> job retried -> Loan approved"
+    },
+    "startedAt": "2026-10-30T17:38:15",
+    "actions": [
+      "fault validation-reference-data -> True (before start)",
+      "incident raised at Task_ValidateApplicant: JOB_NO_RETRIES - io.camunda.client.exception.JobError: Validation reference-data service unavailable (connection refused). Fix: restore the service (POST /admin/faults/validation-reference-data?enabled=false) and retry.\r\n\tat io.camunda.client.exception.CamundaError.jobError(CamundaError.java:69)\r\n\tat io.camunda.client.exception.CamundaError.jobError(CamundaError.java:60)\r\n\tat edu.pbj2.lab1.worker.ApplicantValidationWorker.validate(ApplicantValidationWorker.java:40)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:565)\r\n\tat io.camunda.client.spring.bean.SpringMethodInfo.invoke(SpringMethodInfo.java:80)\r\n\tat io.camunda.client.jobhandling.JobHandlerInvokingBeans.handle(JobHandlerInvokingBeans.java:67)\r\n\tat io.camunda.client.impl.worker.JobRunnableFactoryImpl.executeJob(JobRunnableFactoryImpl.java:45)\r\n\tat io.camunda.client.impl.worker.JobRunnableFactoryImpl.lambda$create$0(JobRunnableFactoryImpl.java:40)\r\n\tat io.camunda.client.impl.worker.BlockingExecutor.lambda$execute$0(BlockingExecutor.java:50)\r\n\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)\r\n\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)\r\n\tat java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:309)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)\r\n\tat java.base/java.lang.Thread.run(Thread.java:1474)",
+      "fault validation-reference-data -> False",
+      "retried job 2251799813705575 and resolved incident 2251799813705834"
+    ],
+    "screenshots": [
+      "evidence/screenshots/07-operate-incident-L1-08.png",
+      "evidence/screenshots/08-operate-incident-detail-L1-08.png",
+      "evidence/screenshots/08-operate-incident-message-L1-08.png",
+      "evidence/screenshots/09-operate-recovered-L1-08.png"
+    ],
+    "processInstanceKey": "2251799813705559",
+    "incident": {
+      "key": "2251799813705834",
+      "element": "Task_ValidateApplicant",
+      "type": "JOB_NO_RETRIES",
+      "message": "io.camunda.client.exception.JobError: Validation reference-data service unavailable (connection refused). Fix: restore the service (POST /admin/faults/validation-reference-data?enabled=false) and retry.\r\n\tat io.camunda.client.exception.CamundaError.jobError(CamundaError.java:69)\r\n\tat io.camunda.client.exception.CamundaError.jobError(CamundaError.java:60)\r\n\tat edu.pbj2.lab1.worker.ApplicantValidationWorker.validate(ApplicantValidationWorker.java:40)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:565)\r\n\tat io.camunda.client.spring.bean.SpringMethodInfo.invoke(SpringMethodInfo.java:80)\r\n\tat io.camunda.client.jobhandling.JobHandlerInvokingBeans.handle(JobHandlerInvokingBeans.java:67)\r\n\tat io.camunda.client.impl.worker.JobRunnableFactoryImpl.executeJob(JobRunnableFactoryImpl.java:45)\r\n\tat io.camunda.client.impl.worker.JobRunnableFactoryImpl.lambda$create$0(JobRunnableFactoryImpl.java:40)\r\n\tat io.camunda.client.impl.worker.BlockingExecutor.lambda$execute$0(BlockingExecutor.java:50)\r\n\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)\r\n\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)\r\n\tat java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:309)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)\r\n\tat java.base/java.lang.Thread.run(Thread.java:1474)"
+    },
+    "final": {
+      "processInstanceKey": "2251799813705559",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_CreditAssessment(COMPLETED)",
+        "Task_LoanDecision(COMPLETED)",
+        "Gateway_DecisionOutcome(COMPLETED)",
+        "Gateway_JoinApproval(COMPLETED)",
+        "Gateway_LoanApproved(COMPLETED)",
+        "Task_GenerateOffer(COMPLETED)",
+        "Task_NotifyApproved(COMPLETED)",
+        "EndEvent_LoanApproved(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_LoanApproved"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": true,
+      "validationErrors": [],
+      "creditCheckStatus": "COMPLETED",
+      "creditScore": 705,
+      "creditRiskBand": "B",
+      "creditCheckError": null,
+      "debtToIncomeRatio": 0.0997,
+      "loanToIncomeRatio": 0.2381,
+      "loanDecision": {
+        "outcome": "APPROVED",
+        "reason": "Meets all automatic approval criteria",
+        "ruleId": "LD-5"
+      },
+      "finalDecision": "APPROVED",
+      "decisionSource": "AUTOMATED (DMN)",
+      "decisionReason": "Meets all automatic approval criteria",
+      "offerId": "OFF-LA-2026-0008",
+      "interestRate": 0.079
+    },
+    "actualEndEvents": [
+      "EndEvent_LoanApproved"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L1-09",
+    "title": "Non-numeric income -> incident -> variable corrected -> retried -> approved",
+    "category": "failure-recovery",
+    "expected": {
+      "endEvent": "EndEvent_LoanApproved",
+      "route": "Validate rejects monthlyIncome=\"five thousand\" -> INCIDENT (retries 0) -> variable set to 6800 -> retry -> Loan approved"
+    },
+    "startedAt": "2026-10-30T17:39:10",
+    "actions": [
+      "incident raised at Task_ValidateApplicant: JOB_NO_RETRIES - io.camunda.client.exception.JobError: Variable 'monthlyIncome' must be numeric but was the String \"five thousand\". Correct the variable in Operate and retry the job.\r\n\tat io.camunda.client.exception.CamundaError.jobError(CamundaError.java:69)\r\n\tat io.camunda.client.exception.CamundaError.jobError(CamundaError.java:52)\r\n\tat edu.pbj2.lab1.worker.ApplicantValidationWorker.validate(ApplicantValidationWorker.java:55)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:565)\r\n\tat io.camunda.client.spring.bean.SpringMethodInfo.invoke(SpringMethodInfo.java:80)\r\n\tat io.camunda.client.jobhandling.JobHandlerInvokingBeans.handle(JobHandlerInvokingBeans.java:67)\r\n\tat io.camunda.client.impl.worker.JobRunnableFactoryImpl.executeJob(JobRunnableFactoryImpl.java:45)\r\n\tat io.camunda.client.impl.worker.JobRunnableFactoryImpl.lambda$create$0(JobRunnableFactoryImpl.java:40)\r\n\tat io.camunda.client.impl.worker.BlockingExecutor.lambda$execute$0(BlockingExecutor.java:50)\r\n\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)\r\n\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)\r\n\tat java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:309)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)\r\n\tat java.base/java.lang.Thread.run(Thread.java:1474)",
+      "corrected variables {'monthlyIncome': 6800}",
+      "retried job 2251799813706419 and resolved incident 2251799813706421"
+    ],
+    "screenshots": [
+      "evidence/screenshots/08-operate-incident-detail-L1-09-malformed-variable.png",
+      "evidence/screenshots/08-operate-incident-message-L1-09.png",
+      "evidence/screenshots/09-operate-recovered-L1-09.png"
+    ],
+    "processInstanceKey": "2251799813706403",
+    "incident": {
+      "key": "2251799813706421",
+      "element": "Task_ValidateApplicant",
+      "type": "JOB_NO_RETRIES",
+      "message": "io.camunda.client.exception.JobError: Variable 'monthlyIncome' must be numeric but was the String \"five thousand\". Correct the variable in Operate and retry the job.\r\n\tat io.camunda.client.exception.CamundaError.jobError(CamundaError.java:69)\r\n\tat io.camunda.client.exception.CamundaError.jobError(CamundaError.java:52)\r\n\tat edu.pbj2.lab1.worker.ApplicantValidationWorker.validate(ApplicantValidationWorker.java:55)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:565)\r\n\tat io.camunda.client.spring.bean.SpringMethodInfo.invoke(SpringMethodInfo.java:80)\r\n\tat io.camunda.client.jobhandling.JobHandlerInvokingBeans.handle(JobHandlerInvokingBeans.java:67)\r\n\tat io.camunda.client.impl.worker.JobRunnableFactoryImpl.executeJob(JobRunnableFactoryImpl.java:45)\r\n\tat io.camunda.client.impl.worker.JobRunnableFactoryImpl.lambda$create$0(JobRunnableFactoryImpl.java:40)\r\n\tat io.camunda.client.impl.worker.BlockingExecutor.lambda$execute$0(BlockingExecutor.java:50)\r\n\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)\r\n\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)\r\n\tat java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:309)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)\r\n\tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)\r\n\tat java.base/java.lang.Thread.run(Thread.java:1474)"
+    },
+    "final": {
+      "processInstanceKey": "2251799813706403",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_CreditAssessment(COMPLETED)",
+        "Task_LoanDecision(COMPLETED)",
+        "Gateway_DecisionOutcome(COMPLETED)",
+        "Gateway_JoinApproval(COMPLETED)",
+        "Gateway_LoanApproved(COMPLETED)",
+        "Task_GenerateOffer(COMPLETED)",
+        "Task_NotifyApproved(COMPLETED)",
+        "EndEvent_LoanApproved(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_LoanApproved"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": true,
+      "validationErrors": [],
+      "creditCheckStatus": "COMPLETED",
+      "creditScore": 744,
+      "creditRiskBand": "B",
+      "creditCheckError": null,
+      "debtToIncomeRatio": 0.11,
+      "loanToIncomeRatio": 0.2941,
+      "loanDecision": {
+        "outcome": "APPROVED",
+        "reason": "Meets all automatic approval criteria",
+        "ruleId": "LD-5"
+      },
+      "finalDecision": "APPROVED",
+      "decisionSource": "AUTOMATED (DMN)",
+      "decisionReason": "Meets all automatic approval criteria",
+      "offerId": "OFF-LA-2026-0009",
+      "interestRate": 0.079
+    },
+    "actualEndEvents": [
+      "EndEvent_LoanApproved"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L1-10",
+    "title": "Debt-to-income above 50% is rejected by the DMN",
+    "category": "rejection",
+    "expected": {
+      "endEvent": "EndEvent_LoanRejected",
+      "route": "Validate -> DTI 0.61 -> DMN LD-2 Rejected -> rejection notice -> Loan rejected"
+    },
+    "startedAt": "2026-10-30T17:39:46",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/10-operate-variables-L1-10.png"
+    ],
+    "processInstanceKey": "2251799813706832",
+    "final": {
+      "processInstanceKey": "2251799813706832",
+      "processDefinitionId": "loan-approval",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_ApplicationReceived(COMPLETED)",
+        "Task_ValidateApplicant(COMPLETED)",
+        "Gateway_DataValid(COMPLETED)",
+        "Task_CreditAssessment(COMPLETED)",
+        "Task_LoanDecision(COMPLETED)",
+        "Gateway_DecisionOutcome(COMPLETED)",
+        "Gateway_JoinRejection(COMPLETED)",
+        "Task_NotifyRejected(COMPLETED)",
+        "EndEvent_LoanRejected(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_LoanRejected"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "validationPassed": true,
+      "validationErrors": [],
+      "creditCheckStatus": "COMPLETED",
+      "creditScore": 762,
+      "creditRiskBand": "A",
+      "creditCheckError": null,
+      "debtToIncomeRatio": 0.559,
+      "loanToIncomeRatio": 0.4167,
+      "loanDecision": {
+        "outcome": "REJECTED",
+        "reason": "Debt-to-income ratio above 50%",
+        "ruleId": "LD-2"
+      },
+      "finalDecision": "REJECTED",
+      "decisionSource": "AUTOMATED (DMN)",
+      "decisionReason": "Debt-to-income ratio above 50%",
+      "offerId": null,
+      "interestRate": null
+    },
+    "actualEndEvents": [
+      "EndEvent_LoanRejected"
+    ],
+    "status": "PASS"
+  }
+]

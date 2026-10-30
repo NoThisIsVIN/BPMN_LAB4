@@ -1,0 +1,68 @@
+{
+  "id": "L3-03",
+  "title": "Chest pain routed to immediate clinical assessment, referred to ED",
+  "category": "manual-review",
+  "processId": "patient-appointment-triage",
+  "app": "http://localhost:8083",
+  "expected": {
+    "endEvent": "EndEvent_EmergencyReferral",
+    "route": "DMN URGENT_ASSESSMENT (TR-1) → Immediate clinical assessment (EMERGENCY_REFERRAL) → hand over to ED"
+  },
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "slotCount",
+    "bookingStatus",
+    "bookingReference",
+    "appointmentSlot"
+  ],
+  "variables": {
+    "patientAge": 61,
+    "appointmentPreference": {
+      "department": "CARDIOLOGY",
+      "preferredDate": "2026-11-03",
+      "timeOfDay": "ANY"
+    },
+    "symptomsSummary": "Sudden chest tightness while climbing stairs",
+    "painLevel": 7,
+    "symptomDurationDays": 0,
+    "patientReference": "SYN-P-0003",
+    "chestPain": true
+  },
+  "steps": [
+    {
+      "do": "screenshot",
+      "view": "tasklist-task",
+      "name": "06-tasklist-task-form-urgent",
+      "waitFor": "parked"
+    },
+    {
+      "do": "completeTask",
+      "elementId": "Task_UrgentAssessment",
+      "variables": {
+        "assessmentOutcome": "EMERGENCY_REFERRAL",
+        "assessmentNotes": "Red-flag chest pain, refer to emergency department"
+      },
+      "ui": {
+        "radio": "Refer to emergency department now",
+        "textarea": "Red-flag chest pain, refer to emergency department"
+      },
+      "screenshot": "06-tasklist-task-form-urgent-assessment"
+    },
+    {
+      "do": "sleep",
+      "seconds": 5
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L3-03",
+      "waitFor": "parked"
+    }
+  ]
+}

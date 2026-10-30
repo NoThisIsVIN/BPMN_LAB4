@@ -1,0 +1,99 @@
+{
+  "scenario": "L3-01",
+  "processInstanceKey": "2251799813709073",
+  "scope": "process instance (root scope)",
+  "variables": {
+    "appointmentDetails": {
+      "location": "Outpatients block A, room 1",
+      "department": "GENERAL_PRACTICE",
+      "slotId": "GEN-20261103-0800",
+      "clinician": "Clinician A (synthetic)",
+      "date": "2026-11-03",
+      "time": "08:00"
+    },
+    "appointmentPreference": {
+      "department": "GENERAL_PRACTICE",
+      "preferredDate": "2026-11-03",
+      "timeOfDay": "MORNING"
+    },
+    "appointmentSlot": "2026-11-03 08:00 - GENERAL_PRACTICE, Clinician A (synthetic), Outpatients block A, room 1",
+    "availabilityRequestId": "AR-5F7D710F",
+    "availableSlots": [
+      {
+        "location": "Outpatients block A, room 1",
+        "department": "GENERAL_PRACTICE",
+        "date": "2026-11-03",
+        "clinician": "Clinician A (synthetic)",
+        "time": "08:00",
+        "slotId": "GEN-20261103-0800"
+      },
+      {
+        "location": "Outpatients block A, room 2",
+        "department": "GENERAL_PRACTICE",
+        "date": "2026-11-03",
+        "clinician": "Clinician B (synthetic)",
+        "time": "09:00",
+        "slotId": "GEN-20261103-0900"
+      },
+      {
+        "location": "Outpatients block A, room 3",
+        "department": "GENERAL_PRACTICE",
+        "date": "2026-11-03",
+        "clinician": "Clinician C (synthetic)",
+        "time": "10:00",
+        "slotId": "GEN-20261103-1000"
+      },
+      {
+        "location": "Outpatients block A, room 1",
+        "department": "GENERAL_PRACTICE",
+        "date": "2026-11-03",
+        "clinician": "Clinician D (synthetic)",
+        "time": "11:00",
+        "slotId": "GEN-20261103-1100"
+      },
+      {
+        "location": "Outpatients block A, room 1",
+        "department": "GENERAL_PRACTICE",
+        "date": "2026-11-04",
+        "clinician": "Clinician A (synthetic)",
+        "time": "08:00",
+        "slotId": "GEN-20261104-0800"
+      }
+    ],
+    "bookingReference": "BK-344F20EC",
+    "bookingStatus": "CONFIRMED",
+    "breathingDifficulty": false,
+    "chestPain": false,
+    "chronicCondition": false,
+    "department": "GENERAL_PRACTICE",
+    "highFever": false,
+    "maxWaitDays": 14,
+    "painLevel": 2,
+    "patientAge": 34,
+    "patientNotification": {
+      "template": "APPOINTMENT_CONFIRMED",
+      "to": "SYN-P-0001",
+      "message": "Your appointment is confirmed: 2026-11-03 08:00 - GENERAL_PRACTICE, Clinician A (synthetic), Outpatients block A, room 1 (booking BK-344F20EC)",
+      "sentAt": "2026-10-30T17:43:56.571629500+05:30"
+    },
+    "patientReference": "SYN-P-0001",
+    "preferredDate": "2026-11-03",
+    "registrationErrors": [],
+    "registrationValid": true,
+    "registrationValidatedAt": "2026-10-30T17:43:56.311040700+05:30",
+    "searchFromDate": "2026-11-03",
+    "searchToDate": "2026-11-13",
+    "slotCount": 5,
+    "symptomDurationDays": 3,
+    "symptomsSummary": "Mild cough and sore throat for a few days",
+    "timeOfDay": "MORNING",
+    "triageReason": "No urgency indicators present",
+    "triageResult": {
+      "urgencyCategory": "ROUTINE",
+      "triageReason": "No urgency indicators present",
+      "maxWaitDays": 14,
+      "ruleId": "TR-7"
+    },
+    "urgencyCategory": "ROUTINE"
+  }
+}

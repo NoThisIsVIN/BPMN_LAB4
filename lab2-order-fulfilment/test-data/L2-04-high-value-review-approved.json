@@ -1,0 +1,67 @@
+{
+  "id": "L2-04",
+  "title": "High-value order routed to manual verification – reviewer approves",
+  "category": "manual-review",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OrderFulfilled",
+    "route": "Validate → reserve → total 2080.91 (≥ 2000) → DMN CRITICAL → reviewer APPROVES → payment APPROVED → fulfilment"
+  },
+  "variables": {
+    "orderId": "ORD-2004",
+    "customerReference": "CUST-0002",
+    "productId": "PRD-3003",
+    "quantity": 1,
+    "deliveryPreference": "SAME_DAY",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "tasklist-task",
+      "name": "05-tasklist-task-list"
+    },
+    {
+      "do": "completeTask",
+      "elementId": "Task_VerifyOrder",
+      "screenshot": "06-tasklist-task-form",
+      "variables": {
+        "verificationDecision": "APPROVED",
+        "verificationComment": "VIP customer, order history checked - OK to charge."
+      },
+      "ui": {
+        "radio": "Approve – proceed to payment",
+        "textarea": "VIP customer, order history checked - OK to charge."
+      }
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L2-04"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

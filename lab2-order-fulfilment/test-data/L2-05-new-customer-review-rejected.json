@@ -1,0 +1,54 @@
+{
+  "id": "L2-05",
+  "title": "NEW customer exception order – reviewer rejects",
+  "category": "manual-review",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_CancelledByReviewer",
+    "route": "Validate → reserve → total 1077.60 (NEW ≥ 1000) → DMN NORMAL → reviewer REJECTS → release stock → notify → cancelled"
+  },
+  "variables": {
+    "orderId": "ORD-2005",
+    "customerReference": "CUST-0003",
+    "productId": "PRD-2002",
+    "quantity": 2,
+    "deliveryPreference": "STANDARD",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "completeTask",
+      "elementId": "Task_VerifyOrder",
+      "variables": {
+        "verificationDecision": "REJECTED",
+        "verificationComment": "New account, unusually large first order - cannot verify identity."
+      }
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L2-05"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

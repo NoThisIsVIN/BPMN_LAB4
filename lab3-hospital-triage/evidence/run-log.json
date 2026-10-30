@@ -1,0 +1,512 @@
+[
+  {
+    "id": "L3-01",
+    "title": "Routine request with an available slot",
+    "category": "success",
+    "expected": {
+      "endEvent": "EndEvent_AppointmentBooked",
+      "route": "Validate \u2192 DMN ROUTINE (TR-7) \u2192 request availability \u2192 REST slots (found) \u2192 book \u2192 confirmation"
+    },
+    "startedAt": "2026-10-30T17:50:46",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L3-01.png"
+    ],
+    "processInstanceKey": "2251799813711753",
+    "final": {
+      "processInstanceKey": "2251799813711753",
+      "processDefinitionId": "patient-appointment-triage",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_RequestReceived(COMPLETED)",
+        "Task_ValidateRegistration(COMPLETED)",
+        "Gateway_RegistrationComplete(COMPLETED)",
+        "Task_ClassifyTriage(COMPLETED)",
+        "Gateway_UrgentNeeded(COMPLETED)",
+        "Gateway_PriorityNeeded(COMPLETED)",
+        "Gateway_JoinPriority(COMPLETED)",
+        "Gateway_JoinUrgent(COMPLETED)",
+        "Task_RequestAvailability(COMPLETED)",
+        "Task_RetrieveSlots(COMPLETED)",
+        "Gateway_SlotAvailable(COMPLETED)",
+        "Task_BookAppointment(COMPLETED)",
+        "Gateway_JoinBooked(COMPLETED)",
+        "Task_SendConfirmation(COMPLETED)",
+        "EndEvent_AppointmentBooked(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_AppointmentBooked"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "urgencyCategory": "ROUTINE",
+      "triageReason": "No urgency indicators present",
+      "maxWaitDays": 14,
+      "registrationErrors": [],
+      "reviewOutcome": null,
+      "assessmentOutcome": null,
+      "schedulingOutcome": null,
+      "slotCount": 5,
+      "bookingStatus": "CONFIRMED",
+      "bookingReference": "BK-5CEF5D6A",
+      "appointmentSlot": "2026-11-03 08:00 - GENERAL_PRACTICE, Clinician A (synthetic), Outpatients block A, room 1"
+    },
+    "actualEndEvents": [
+      "EndEvent_AppointmentBooked"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L3-02",
+    "title": "Moderate pain routed to priority staff review, staff books",
+    "category": "manual-review",
+    "expected": {
+      "endEvent": "EndEvent_AppointmentBooked",
+      "route": "DMN PRIORITY_REVIEW (TR-5) \u2192 Priority staff review (BOOK_APPOINTMENT) \u2192 slots \u2192 book \u2192 confirmation"
+    },
+    "startedAt": "2026-10-30T17:50:59",
+    "actions": [
+      "completed user task Task_PriorityReview in the Tasklist UI with {'radio': 'Book an appointment within the target window', 'textarea': 'Stable, book orthopaedic appointment within 3 days'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/05-tasklist-task-list.png",
+      "evidence/screenshots/06-tasklist-task-form.png",
+      "evidence/screenshots/06-tasklist-task-form-priority-review.png",
+      "evidence/screenshots/06-tasklist-task-form-priority-review-completed.png",
+      "evidence/screenshots/04-operate-instance-L3-02.png"
+    ],
+    "processInstanceKey": "2251799813711866",
+    "final": {
+      "processInstanceKey": "2251799813711866",
+      "processDefinitionId": "patient-appointment-triage",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_RequestReceived(COMPLETED)",
+        "Task_ValidateRegistration(COMPLETED)",
+        "Gateway_RegistrationComplete(COMPLETED)",
+        "Task_ClassifyTriage(COMPLETED)",
+        "Gateway_UrgentNeeded(COMPLETED)",
+        "Gateway_PriorityNeeded(COMPLETED)",
+        "Task_PriorityReview(COMPLETED)",
+        "Gateway_ReviewOutcome(COMPLETED)",
+        "Gateway_JoinPriority(COMPLETED)",
+        "Gateway_JoinUrgent(COMPLETED)",
+        "Task_RequestAvailability(COMPLETED)",
+        "Task_RetrieveSlots(COMPLETED)",
+        "Gateway_SlotAvailable(COMPLETED)",
+        "Task_BookAppointment(COMPLETED)",
+        "Gateway_JoinBooked(COMPLETED)",
+        "Task_SendConfirmation(COMPLETED)",
+        "EndEvent_AppointmentBooked(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_AppointmentBooked"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "urgencyCategory": "PRIORITY_REVIEW",
+      "triageReason": "Moderate pain (5-7 out of 10)",
+      "maxWaitDays": 3,
+      "registrationErrors": [],
+      "reviewOutcome": "BOOK_APPOINTMENT",
+      "assessmentOutcome": null,
+      "schedulingOutcome": null,
+      "slotCount": 5,
+      "bookingStatus": "CONFIRMED",
+      "bookingReference": "BK-91B41FFA",
+      "appointmentSlot": "2026-10-30 13:00 - ORTHOPAEDICS, Clinician A (synthetic), Outpatients block C, room 2"
+    },
+    "actualEndEvents": [
+      "EndEvent_AppointmentBooked"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L3-03",
+    "title": "Chest pain routed to immediate clinical assessment, referred to ED",
+    "category": "manual-review",
+    "expected": {
+      "endEvent": "EndEvent_EmergencyReferral",
+      "route": "DMN URGENT_ASSESSMENT (TR-1) \u2192 Immediate clinical assessment (EMERGENCY_REFERRAL) \u2192 hand over to ED"
+    },
+    "startedAt": "2026-10-30T17:51:48",
+    "actions": [
+      "completed user task Task_UrgentAssessment in the Tasklist UI with {'radio': 'Refer to emergency department now', 'textarea': 'Red-flag chest pain, refer to emergency department'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/06-tasklist-task-form-urgent.png",
+      "evidence/screenshots/06-tasklist-task-form-urgent-assessment.png",
+      "evidence/screenshots/06-tasklist-task-form-urgent-assessment-completed.png",
+      "evidence/screenshots/04-operate-instance-L3-03.png"
+    ],
+    "processInstanceKey": "2251799813712137",
+    "final": {
+      "processInstanceKey": "2251799813712137",
+      "processDefinitionId": "patient-appointment-triage",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_RequestReceived(COMPLETED)",
+        "Task_ValidateRegistration(COMPLETED)",
+        "Gateway_RegistrationComplete(COMPLETED)",
+        "Task_ClassifyTriage(COMPLETED)",
+        "Gateway_UrgentNeeded(COMPLETED)",
+        "Gateway_JoinAssessment(COMPLETED)",
+        "Task_UrgentAssessment(COMPLETED)",
+        "Gateway_AssessmentOutcome(COMPLETED)",
+        "Task_HandOverED(COMPLETED)",
+        "EndEvent_EmergencyReferral(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_EmergencyReferral"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "urgencyCategory": "URGENT_ASSESSMENT",
+      "triageReason": "Chest pain reported",
+      "maxWaitDays": 0,
+      "registrationErrors": [],
+      "reviewOutcome": null,
+      "assessmentOutcome": "EMERGENCY_REFERRAL",
+      "schedulingOutcome": null,
+      "slotCount": null,
+      "bookingStatus": null,
+      "bookingReference": null,
+      "appointmentSlot": null
+    },
+    "actualEndEvents": [
+      "EndEvent_EmergencyReferral"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L3-04",
+    "title": "No appointment slot available (DERMATOLOGY), staff waitlists",
+    "category": "rejection",
+    "expected": {
+      "endEvent": "EndEvent_Waitlisted",
+      "route": "DMN ROUTINE \u2192 slots (0 found) \u2192 Resolve scheduling (WAITLIST) \u2192 notify patient \u2192 waitlisted"
+    },
+    "startedAt": "2026-10-30T17:52:27",
+    "actions": [
+      "completed user task Task_ResolveScheduling via REST API with {'schedulingOutcome': 'WAITLIST', 'schedulingNotes': 'No dermatology capacity in window, waitlisted'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L3-04.png"
+    ],
+    "processInstanceKey": "2251799813712305",
+    "final": {
+      "processInstanceKey": "2251799813712305",
+      "processDefinitionId": "patient-appointment-triage",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_RequestReceived(COMPLETED)",
+        "Task_ValidateRegistration(COMPLETED)",
+        "Gateway_RegistrationComplete(COMPLETED)",
+        "Task_ClassifyTriage(COMPLETED)",
+        "Gateway_UrgentNeeded(COMPLETED)",
+        "Gateway_PriorityNeeded(COMPLETED)",
+        "Gateway_JoinPriority(COMPLETED)",
+        "Gateway_JoinUrgent(COMPLETED)",
+        "Task_RequestAvailability(COMPLETED)",
+        "Task_RetrieveSlots(COMPLETED)",
+        "Gateway_SlotAvailable(COMPLETED)",
+        "Task_ResolveScheduling(COMPLETED)",
+        "Gateway_SchedulingOutcome(COMPLETED)",
+        "Task_NotifyWaitlisted(COMPLETED)",
+        "EndEvent_Waitlisted(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_Waitlisted"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "urgencyCategory": "ROUTINE",
+      "triageReason": "No urgency indicators present",
+      "maxWaitDays": 14,
+      "registrationErrors": [],
+      "reviewOutcome": null,
+      "assessmentOutcome": null,
+      "schedulingOutcome": "WAITLIST",
+      "slotCount": 0,
+      "bookingStatus": "WAITLISTED",
+      "bookingReference": null,
+      "appointmentSlot": null
+    },
+    "actualEndEvents": [
+      "EndEvent_Waitlisted"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L3-05",
+    "title": "Incomplete registration returned to patient",
+    "category": "validation",
+    "expected": {
+      "endEvent": "EndEvent_RequestIncomplete",
+      "route": "Validate registration (invalid) \u2192 request missing details \u2192 returned"
+    },
+    "startedAt": "2026-10-30T17:52:46",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L3-05.png"
+    ],
+    "processInstanceKey": "2251799813712462",
+    "final": {
+      "processInstanceKey": "2251799813712462",
+      "processDefinitionId": "patient-appointment-triage",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_RequestReceived(COMPLETED)",
+        "Task_ValidateRegistration(COMPLETED)",
+        "Gateway_RegistrationComplete(COMPLETED)",
+        "Task_RequestMissingDetails(COMPLETED)",
+        "EndEvent_RequestIncomplete(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_RequestIncomplete"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "urgencyCategory": null,
+      "triageReason": null,
+      "maxWaitDays": null,
+      "registrationErrors": [
+        "patientReference is required",
+        "painLevel is required"
+      ],
+      "reviewOutcome": null,
+      "assessmentOutcome": null,
+      "schedulingOutcome": null,
+      "slotCount": null,
+      "bookingStatus": null,
+      "bookingReference": null,
+      "appointmentSlot": null
+    },
+    "actualEndEvents": [
+      "EndEvent_RequestIncomplete"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L3-06",
+    "title": "Scheduling API fails \u2192 incident \u2192 fault repaired \u2192 retried \u2192 booked",
+    "category": "failure-recovery",
+    "expected": {
+      "endEvent": "EndEvent_AppointmentBooked",
+      "route": "REST slots fails (HTTP 503, 3 retries) \u2192 incident \u2192 fault off \u2192 retry \u2192 slots \u2192 book \u2192 confirmation"
+    },
+    "startedAt": "2026-10-30T17:52:57",
+    "actions": [
+      "fault scheduling-api-down -> True (before start)",
+      "incident raised at Task_RetrieveSlots: JOB_NO_RETRIES - | Error variables: {error={code=503, variables={response={headers={Transfer-Encoding=chunked, Connection=close, Date=Fri, 30 Oct 2026 12:23:11 GMT, Content-Type=application/json}, body={error=Scheduling service temporarily unavailable, status=503}}}, message=, type=io.camunda.connector.api.error.ConnectorException}}",
+      "fault scheduling-api-down -> False",
+      "retried job 2251799813712580 and resolved incident 2251799813712630"
+    ],
+    "screenshots": [
+      "evidence/screenshots/07-operate-incident.png",
+      "evidence/screenshots/08-operate-incident-detail.png",
+      "evidence/screenshots/09-operate-recovered.png",
+      "evidence/screenshots/10-operate-variables.png"
+    ],
+    "processInstanceKey": "2251799813712521",
+    "incident": {
+      "key": "2251799813712630",
+      "element": "Task_RetrieveSlots",
+      "type": "JOB_NO_RETRIES",
+      "message": "| Error variables: {error={code=503, variables={response={headers={Transfer-Encoding=chunked, Connection=close, Date=Fri, 30 Oct 2026 12:23:11 GMT, Content-Type=application/json}, body={error=Scheduling service temporarily unavailable, status=503}}}, message=, type=io.camunda.connector.api.error.ConnectorException}}"
+    },
+    "final": {
+      "processInstanceKey": "2251799813712521",
+      "processDefinitionId": "patient-appointment-triage",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_RequestReceived(COMPLETED)",
+        "Task_ValidateRegistration(COMPLETED)",
+        "Gateway_RegistrationComplete(COMPLETED)",
+        "Task_ClassifyTriage(COMPLETED)",
+        "Gateway_UrgentNeeded(COMPLETED)",
+        "Gateway_PriorityNeeded(COMPLETED)",
+        "Gateway_JoinPriority(COMPLETED)",
+        "Gateway_JoinUrgent(COMPLETED)",
+        "Task_RequestAvailability(COMPLETED)",
+        "Task_RetrieveSlots(COMPLETED)",
+        "Gateway_SlotAvailable(COMPLETED)",
+        "Task_BookAppointment(COMPLETED)",
+        "Gateway_JoinBooked(COMPLETED)",
+        "Task_SendConfirmation(COMPLETED)",
+        "EndEvent_AppointmentBooked(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_AppointmentBooked"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "urgencyCategory": "ROUTINE",
+      "triageReason": "No urgency indicators present",
+      "maxWaitDays": 14,
+      "registrationErrors": [],
+      "reviewOutcome": null,
+      "assessmentOutcome": null,
+      "schedulingOutcome": null,
+      "slotCount": 5,
+      "bookingStatus": "CONFIRMED",
+      "bookingReference": "BK-90450D53",
+      "appointmentSlot": "2026-11-03 08:00 - RESPIRATORY, Clinician A (synthetic), Outpatients block D, room 1"
+    },
+    "actualEndEvents": [
+      "EndEvent_AppointmentBooked"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L3-07",
+    "title": "Priority review escalated to urgent, urgent same-day slot booked",
+    "category": "manual-review",
+    "expected": {
+      "endEvent": "EndEvent_AppointmentBooked",
+      "route": "DMN PRIORITY_REVIEW (TR-4) \u2192 staff ESCALATE_URGENT \u2192 Immediate assessment (BOOK_URGENT_SLOT) \u2192 same-day slot booked"
+    },
+    "startedAt": "2026-10-30T17:53:51",
+    "actions": [
+      "completed user task Task_PriorityReview via REST API with {'reviewOutcome': 'ESCALATE_URGENT', 'reviewNotes': 'Older patient with chronic condition and fever, escalate'}",
+      "completed user task Task_UrgentAssessment via REST API with {'assessmentOutcome': 'BOOK_URGENT_SLOT', 'assessmentNotes': 'Stable on assessment, same-day GP slot'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L3-07.png"
+    ],
+    "processInstanceKey": "2251799813712794",
+    "final": {
+      "processInstanceKey": "2251799813712794",
+      "processDefinitionId": "patient-appointment-triage",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_RequestReceived(COMPLETED)",
+        "Task_ValidateRegistration(COMPLETED)",
+        "Gateway_RegistrationComplete(COMPLETED)",
+        "Task_ClassifyTriage(COMPLETED)",
+        "Gateway_UrgentNeeded(COMPLETED)",
+        "Gateway_PriorityNeeded(COMPLETED)",
+        "Task_PriorityReview(COMPLETED)",
+        "Gateway_ReviewOutcome(COMPLETED)",
+        "Gateway_JoinAssessment(COMPLETED)",
+        "Task_UrgentAssessment(COMPLETED)",
+        "Gateway_AssessmentOutcome(COMPLETED)",
+        "Gateway_JoinUrgent(COMPLETED)",
+        "Task_RequestAvailability(COMPLETED)",
+        "Task_RetrieveSlots(COMPLETED)",
+        "Gateway_SlotAvailable(COMPLETED)",
+        "Task_BookAppointment(COMPLETED)",
+        "Gateway_JoinBooked(COMPLETED)",
+        "Task_SendConfirmation(COMPLETED)",
+        "EndEvent_AppointmentBooked(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_AppointmentBooked"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "urgencyCategory": "URGENT_ASSESSMENT",
+      "triageReason": "High fever in patient aged 65 or over",
+      "maxWaitDays": 0,
+      "registrationErrors": [],
+      "reviewOutcome": "ESCALATE_URGENT",
+      "assessmentOutcome": "BOOK_URGENT_SLOT",
+      "schedulingOutcome": null,
+      "slotCount": 5,
+      "bookingStatus": "CONFIRMED",
+      "bookingReference": "BK-AF9002CE",
+      "appointmentSlot": "2026-10-30 08:00 - GENERAL_PRACTICE, Clinician A (synthetic), Outpatients block A, room 1"
+    },
+    "actualEndEvents": [
+      "EndEvent_AppointmentBooked"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L3-08",
+    "title": "No slot available, scheduling staff assigns a manual slot",
+    "category": "manual-review",
+    "expected": {
+      "endEvent": "EndEvent_AppointmentBooked",
+      "route": "slots (0 found) \u2192 Resolve scheduling (MANUAL_SLOT) \u2192 confirmation"
+    },
+    "startedAt": "2026-10-30T17:54:13",
+    "actions": [
+      "completed user task Task_PriorityReview via REST API with {'reviewOutcome': 'BOOK_APPOINTMENT', 'reviewNotes': 'Book dermatology review within 5 days'}",
+      "completed user task Task_ResolveScheduling via REST API with {'schedulingOutcome': 'MANUAL_SLOT', 'manualSlot': '2026-11-05 15:00 - Dermatology extra clinic, room 4', 'schedulingNotes': 'Extra clinic session opened by scheduling lead'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L3-08.png"
+    ],
+    "processInstanceKey": "2251799813712952",
+    "final": {
+      "processInstanceKey": "2251799813712952",
+      "processDefinitionId": "patient-appointment-triage",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_RequestReceived(COMPLETED)",
+        "Task_ValidateRegistration(COMPLETED)",
+        "Gateway_RegistrationComplete(COMPLETED)",
+        "Task_ClassifyTriage(COMPLETED)",
+        "Gateway_UrgentNeeded(COMPLETED)",
+        "Gateway_PriorityNeeded(COMPLETED)",
+        "Task_PriorityReview(COMPLETED)",
+        "Gateway_ReviewOutcome(COMPLETED)",
+        "Gateway_JoinPriority(COMPLETED)",
+        "Gateway_JoinUrgent(COMPLETED)",
+        "Task_RequestAvailability(COMPLETED)",
+        "Task_RetrieveSlots(COMPLETED)",
+        "Gateway_SlotAvailable(COMPLETED)",
+        "Task_ResolveScheduling(COMPLETED)",
+        "Gateway_SchedulingOutcome(COMPLETED)",
+        "Gateway_JoinBooked(COMPLETED)",
+        "Task_SendConfirmation(COMPLETED)",
+        "EndEvent_AppointmentBooked(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_AppointmentBooked"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "urgencyCategory": "PRIORITY_REVIEW",
+      "triageReason": "Symptoms persisting for more than 14 days",
+      "maxWaitDays": 5,
+      "registrationErrors": [],
+      "reviewOutcome": "BOOK_APPOINTMENT",
+      "assessmentOutcome": null,
+      "schedulingOutcome": "MANUAL_SLOT",
+      "slotCount": 0,
+      "bookingStatus": "CONFIRMED_MANUAL",
+      "bookingReference": null,
+      "appointmentSlot": "2026-11-05 15:00 - Dermatology extra clinic, room 4"
+    },
+    "actualEndEvents": [
+      "EndEvent_AppointmentBooked"
+    ],
+    "status": "PASS"
+  }
+]

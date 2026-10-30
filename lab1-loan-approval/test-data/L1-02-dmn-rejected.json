@@ -1,0 +1,50 @@
+{
+  "id": "L1-02",
+  "title": "Low credit score is rejected by the DMN",
+  "category": "rejection",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanRejected",
+    "route": "Validate -> credit score 512 -> DMN LD-1 Rejected -> rejection notice -> Loan rejected"
+  },
+  "variables": {
+    "applicationId": "LA-2026-0002",
+    "applicantId": "APP-1002",
+    "fullName": "Synthetic Applicant Bravo",
+    "email": "synthetic.applicant.bravo@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 4100,
+    "monthlyDebtPayments": 650,
+    "loanAmount": 18000,
+    "loanTermMonths": 48,
+    "loanPurpose": "Home renovation"
+  },
+  "steps": [
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L1-02-rejected"
+    }
+  ],
+  "reportVariables": [
+    "validationPassed",
+    "validationErrors",
+    "creditCheckStatus",
+    "creditScore",
+    "creditRiskBand",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate"
+  ]
+}

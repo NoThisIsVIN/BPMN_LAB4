@@ -1,0 +1,10 @@
+| ID | Scenario | Category | Expected route | Actual outcome | Instance key | Status |
+|---|---|---|---|---|---|---|
+| L2-01 | Stock available and payment approved | success | Validate → reserve stock → total 215.76 → DMN LOW → no verification → payment APPROVED → fulfilment | EndEvent_OrderFulfilled | `2251799813713817` | **PASS** |
+| L2-02 | Stock insufficient – order cannot proceed to fulfilment | rejection | Validate → stock check INSUFFICIENT (5 requested, 2 in stock) → notify customer → cancelled | EndEvent_OutOfStock | `2251799813713977` | **PASS** |
+| L2-03 | Payment declined by the mock gateway | rejection | Validate → reserve → total 553.79 → DMN HIGH → payment DECLINED (insufficient funds) → release stock → notify → cancelled | EndEvent_PaymentDeclined | `2251799813714038` | **PASS** |
+| L2-04 | High-value order routed to manual verification – reviewer approves | manual-review | Validate → reserve → total 2080.91 (≥ 2000) → DMN CRITICAL → reviewer APPROVES → payment APPROVED → fulfilment | EndEvent_OrderFulfilled | `2251799813714167` | **PASS** |
+| L2-05 | NEW customer exception order – reviewer rejects | manual-review | Validate → reserve → total 1077.60 (NEW ≥ 1000) → DMN NORMAL → reviewer REJECTS → release stock → notify → cancelled | EndEvent_CancelledByReviewer | `2251799813714379` | **PASS** |
+| L2-06 | Invalid product ID – order rejected by validation | validation | Validate → orderValid=false (unknown product) → notify customer → rejected | EndEvent_OrderRejected | `2251799813714504` | **PASS** |
+| L2-07 | Payment gateway outage → incident → gateway restored → retry → fulfilled | failure-recovery | … → Process payment fails (HTTP 503) 3× → incident → fault off → retry job → APPROVED → fulfilment | EndEvent_OrderFulfilled (after incident: JOB_NO_RETRIES) | `2251799813714551` | **PASS** |
+| L2-08 | Inventory service outage → incident → service restored → retry → fulfilled | failure-recovery | Validate → Check inventory fails 3× (5 s back-off) → incident → fault off → retry job → reserve → … → fulfilment | EndEvent_OrderFulfilled (after incident: JOB_NO_RETRIES) | `2251799813714788` | **PASS** |

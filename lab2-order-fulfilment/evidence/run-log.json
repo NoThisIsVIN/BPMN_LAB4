@@ -1,0 +1,524 @@
+[
+  {
+    "id": "L2-01",
+    "title": "Stock available and payment approved",
+    "category": "success",
+    "expected": {
+      "endEvent": "EndEvent_OrderFulfilled",
+      "route": "Validate \u2192 reserve stock \u2192 total 215.76 \u2192 DMN LOW \u2192 no verification \u2192 payment APPROVED \u2192 fulfilment"
+    },
+    "startedAt": "2026-10-30T17:58:22",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L2-01.png",
+      "evidence/screenshots/10-operate-variables.png"
+    ],
+    "processInstanceKey": "2251799813713817",
+    "final": {
+      "processInstanceKey": "2251799813713817",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckInventory(COMPLETED)",
+        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Gateway_JoinVerified(COMPLETED)",
+        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Task_CreateShipment(COMPLETED)",
+        "Task_NotifyConfirmed(COMPLETED)",
+        "EndEvent_OrderFulfilled(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OrderFulfilled"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "REGULAR",
+      "stockStatus": "AVAILABLE",
+      "reservationId": "RES-5AF011CF",
+      "reservationStatus": "COMMITTED",
+      "orderTotal": 215.76,
+      "deliveryPriority": "LOW",
+      "slaHours": 96,
+      "verificationDecision": null,
+      "paymentStatus": "APPROVED",
+      "transactionId": "TXN-E371C5F2-EAC",
+      "declineReason": null,
+      "shipmentId": "SHP-ORD-2001",
+      "trackingNumber": "TRK981B2B934C"
+    },
+    "actualEndEvents": [
+      "EndEvent_OrderFulfilled"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-02",
+    "title": "Stock insufficient \u2013 order cannot proceed to fulfilment",
+    "category": "rejection",
+    "expected": {
+      "endEvent": "EndEvent_OutOfStock",
+      "route": "Validate \u2192 stock check INSUFFICIENT (5 requested, 2 in stock) \u2192 notify customer \u2192 cancelled"
+    },
+    "startedAt": "2026-10-30T17:58:40",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L2-02.png"
+    ],
+    "processInstanceKey": "2251799813713977",
+    "final": {
+      "processInstanceKey": "2251799813713977",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckInventory(COMPLETED)",
+        "Gateway_StockAvailable(COMPLETED)",
+        "Task_NotifyOutOfStock(COMPLETED)",
+        "EndEvent_OutOfStock(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OutOfStock"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "REGULAR",
+      "stockStatus": "INSUFFICIENT",
+      "reservationId": null,
+      "reservationStatus": null,
+      "orderTotal": null,
+      "deliveryPriority": null,
+      "slaHours": null,
+      "verificationDecision": null,
+      "paymentStatus": null,
+      "transactionId": null,
+      "declineReason": null,
+      "shipmentId": null,
+      "trackingNumber": null
+    },
+    "actualEndEvents": [
+      "EndEvent_OutOfStock"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-03",
+    "title": "Payment declined by the mock gateway",
+    "category": "rejection",
+    "expected": {
+      "endEvent": "EndEvent_PaymentDeclined",
+      "route": "Validate \u2192 reserve \u2192 total 553.79 \u2192 DMN HIGH \u2192 payment DECLINED (insufficient funds) \u2192 release stock \u2192 notify \u2192 cancelled"
+    },
+    "startedAt": "2026-10-30T17:58:51",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L2-03.png"
+    ],
+    "processInstanceKey": "2251799813714038",
+    "final": {
+      "processInstanceKey": "2251799813714038",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckInventory(COMPLETED)",
+        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Gateway_JoinVerified(COMPLETED)",
+        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Task_ReleaseStockPayment(COMPLETED)",
+        "Task_NotifyPaymentDeclined(COMPLETED)",
+        "EndEvent_PaymentDeclined(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_PaymentDeclined"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "REGULAR",
+      "stockStatus": "AVAILABLE",
+      "reservationId": "RES-1AF2BAEE",
+      "reservationStatus": "RELEASED",
+      "orderTotal": 553.79,
+      "deliveryPriority": "HIGH",
+      "slaHours": 24,
+      "verificationDecision": null,
+      "paymentStatus": "DECLINED",
+      "transactionId": "TXN-CA6885C2-CFA",
+      "declineReason": "Insufficient funds",
+      "shipmentId": null,
+      "trackingNumber": null
+    },
+    "actualEndEvents": [
+      "EndEvent_PaymentDeclined"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-04",
+    "title": "High-value order routed to manual verification \u2013 reviewer approves",
+    "category": "manual-review",
+    "expected": {
+      "endEvent": "EndEvent_OrderFulfilled",
+      "route": "Validate \u2192 reserve \u2192 total 2080.91 (\u2265 2000) \u2192 DMN CRITICAL \u2192 reviewer APPROVES \u2192 payment APPROVED \u2192 fulfilment"
+    },
+    "startedAt": "2026-10-30T17:59:02",
+    "actions": [
+      "completed user task Task_VerifyOrder in the Tasklist UI with {'radio': 'Approve \u2013 proceed to payment', 'textarea': 'VIP customer, order history checked - OK to charge.'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/05-tasklist-task-list.png",
+      "evidence/screenshots/06-tasklist-task-form.png",
+      "evidence/screenshots/06-tasklist-task-form-completed.png",
+      "evidence/screenshots/04-operate-instance-L2-04.png"
+    ],
+    "processInstanceKey": "2251799813714167",
+    "final": {
+      "processInstanceKey": "2251799813714167",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckInventory(COMPLETED)",
+        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Task_VerifyOrder(COMPLETED)",
+        "Gateway_OrderVerified(COMPLETED)",
+        "Gateway_JoinVerified(COMPLETED)",
+        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Task_CreateShipment(COMPLETED)",
+        "Task_NotifyConfirmed(COMPLETED)",
+        "EndEvent_OrderFulfilled(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OrderFulfilled"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "VIP",
+      "stockStatus": "AVAILABLE",
+      "reservationId": "RES-515A4504",
+      "reservationStatus": "COMMITTED",
+      "orderTotal": 2080.91,
+      "deliveryPriority": "CRITICAL",
+      "slaHours": 8,
+      "verificationDecision": "APPROVED",
+      "paymentStatus": "APPROVED",
+      "transactionId": "TXN-A069CDFC-0EC",
+      "declineReason": null,
+      "shipmentId": "SHP-ORD-2004",
+      "trackingNumber": "TRK51931003EE"
+    },
+    "actualEndEvents": [
+      "EndEvent_OrderFulfilled"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-05",
+    "title": "NEW customer exception order \u2013 reviewer rejects",
+    "category": "manual-review",
+    "expected": {
+      "endEvent": "EndEvent_CancelledByReviewer",
+      "route": "Validate \u2192 reserve \u2192 total 1077.60 (NEW \u2265 1000) \u2192 DMN NORMAL \u2192 reviewer REJECTS \u2192 release stock \u2192 notify \u2192 cancelled"
+    },
+    "startedAt": "2026-10-30T17:59:36",
+    "actions": [
+      "completed user task Task_VerifyOrder via REST API with {'verificationDecision': 'REJECTED', 'verificationComment': 'New account, unusually large first order - cannot verify identity.'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L2-05.png"
+    ],
+    "processInstanceKey": "2251799813714379",
+    "final": {
+      "processInstanceKey": "2251799813714379",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckInventory(COMPLETED)",
+        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Task_VerifyOrder(COMPLETED)",
+        "Gateway_OrderVerified(COMPLETED)",
+        "Task_ReleaseStockReview(COMPLETED)",
+        "Task_NotifyCancelledReview(COMPLETED)",
+        "EndEvent_CancelledByReviewer(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_CancelledByReviewer"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "NEW",
+      "stockStatus": "AVAILABLE",
+      "reservationId": "RES-8368A68A",
+      "reservationStatus": "RELEASED",
+      "orderTotal": 1077.6,
+      "deliveryPriority": "NORMAL",
+      "slaHours": 48,
+      "verificationDecision": "REJECTED",
+      "paymentStatus": null,
+      "transactionId": null,
+      "declineReason": null,
+      "shipmentId": null,
+      "trackingNumber": null
+    },
+    "actualEndEvents": [
+      "EndEvent_CancelledByReviewer"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-06",
+    "title": "Invalid product ID \u2013 order rejected by validation",
+    "category": "validation",
+    "expected": {
+      "endEvent": "EndEvent_OrderRejected",
+      "route": "Validate \u2192 orderValid=false (unknown product) \u2192 notify customer \u2192 rejected"
+    },
+    "startedAt": "2026-10-30T17:59:48",
+    "actions": [],
+    "screenshots": [],
+    "processInstanceKey": "2251799813714504",
+    "final": {
+      "processInstanceKey": "2251799813714504",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_NotifyInvalid(COMPLETED)",
+        "EndEvent_OrderRejected(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OrderRejected"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": false,
+      "validationErrors": [
+        "productId PRD-9999 does not exist in the catalogue"
+      ],
+      "customerCategory": "REGULAR",
+      "stockStatus": null,
+      "reservationId": null,
+      "reservationStatus": null,
+      "orderTotal": null,
+      "deliveryPriority": null,
+      "slaHours": null,
+      "verificationDecision": null,
+      "paymentStatus": null,
+      "transactionId": null,
+      "declineReason": null,
+      "shipmentId": null,
+      "trackingNumber": null
+    },
+    "actualEndEvents": [
+      "EndEvent_OrderRejected"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-07",
+    "title": "Payment gateway outage \u2192 incident \u2192 gateway restored \u2192 retry \u2192 fulfilled",
+    "category": "failure-recovery",
+    "expected": {
+      "endEvent": "EndEvent_OrderFulfilled",
+      "route": "\u2026 \u2192 Process payment fails (HTTP 503) 3\u00d7 \u2192 incident \u2192 fault off \u2192 retry job \u2192 APPROVED \u2192 fulfilment"
+    },
+    "startedAt": "2026-10-30T17:59:55",
+    "actions": [
+      "fault payment-gateway-down -> True (before start)",
+      "incident raised at Task_ProcessPayment: JOB_NO_RETRIES - | Error variables: {error={code=503, variables={response={headers={Transfer-Encoding=chunked, Connection=close, Date=Fri, 30 Oct 2026 12:30:09 GMT, Content-Type=application/json}, body={error=Payment gateway temporarily unavailable, status=503}}}, message=, type=io.camunda.connector.api.error.ConnectorException}}",
+      "fault payment-gateway-down -> False",
+      "retried job 2251799813714618 and resolved incident 2251799813714669"
+    ],
+    "screenshots": [
+      "evidence/screenshots/07-operate-incident.png",
+      "evidence/screenshots/08-operate-incident-detail.png",
+      "evidence/screenshots/09-operate-recovered.png"
+    ],
+    "processInstanceKey": "2251799813714551",
+    "incident": {
+      "key": "2251799813714669",
+      "element": "Task_ProcessPayment",
+      "type": "JOB_NO_RETRIES",
+      "message": "| Error variables: {error={code=503, variables={response={headers={Transfer-Encoding=chunked, Connection=close, Date=Fri, 30 Oct 2026 12:30:09 GMT, Content-Type=application/json}, body={error=Payment gateway temporarily unavailable, status=503}}}, message=, type=io.camunda.connector.api.error.ConnectorException}}"
+    },
+    "final": {
+      "processInstanceKey": "2251799813714551",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckInventory(COMPLETED)",
+        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Gateway_JoinVerified(COMPLETED)",
+        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Task_CreateShipment(COMPLETED)",
+        "Task_NotifyConfirmed(COMPLETED)",
+        "EndEvent_OrderFulfilled(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OrderFulfilled"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "REGULAR",
+      "stockStatus": "AVAILABLE",
+      "reservationId": "RES-52A73716",
+      "reservationStatus": "COMMITTED",
+      "orderTotal": 409.79,
+      "deliveryPriority": "HIGH",
+      "slaHours": 24,
+      "verificationDecision": null,
+      "paymentStatus": "APPROVED",
+      "transactionId": "TXN-4D9C5499-D3F",
+      "declineReason": null,
+      "shipmentId": "SHP-ORD-2007",
+      "trackingNumber": "TRKE658AC8EAF"
+    },
+    "actualEndEvents": [
+      "EndEvent_OrderFulfilled"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-08",
+    "title": "Inventory service outage \u2192 incident \u2192 service restored \u2192 retry \u2192 fulfilled",
+    "category": "failure-recovery",
+    "expected": {
+      "endEvent": "EndEvent_OrderFulfilled",
+      "route": "Validate \u2192 Check inventory fails 3\u00d7 (5 s back-off) \u2192 incident \u2192 fault off \u2192 retry job \u2192 reserve \u2192 \u2026 \u2192 fulfilment"
+    },
+    "startedAt": "2026-10-30T18:00:39",
+    "actions": [
+      "fault inventory-service-down -> True (before start)",
+      "incident raised at Task_CheckInventory: JOB_NO_RETRIES - Inventory service unavailable (HTTP 503 from inventory-api). Fix: restore the service (POST /admin/faults/inventory-service-down?enabled=false) and retry.",
+      "fault inventory-service-down -> False",
+      "retried job 2251799813714812 and resolved incident 2251799813714849"
+    ],
+    "screenshots": [
+      "evidence/screenshots/07-operate-incident-inventory.png",
+      "evidence/screenshots/09-operate-recovered-inventory.png"
+    ],
+    "processInstanceKey": "2251799813714788",
+    "incident": {
+      "key": "2251799813714849",
+      "element": "Task_CheckInventory",
+      "type": "JOB_NO_RETRIES",
+      "message": "Inventory service unavailable (HTTP 503 from inventory-api). Fix: restore the service (POST /admin/faults/inventory-service-down?enabled=false) and retry."
+    },
+    "final": {
+      "processInstanceKey": "2251799813714788",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckInventory(COMPLETED)",
+        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Gateway_JoinVerified(COMPLETED)",
+        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Task_CreateShipment(COMPLETED)",
+        "Task_NotifyConfirmed(COMPLETED)",
+        "EndEvent_OrderFulfilled(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OrderFulfilled"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "VIP",
+      "stockStatus": "AVAILABLE",
+      "reservationId": "RES-5197B1CB",
+      "reservationStatus": "COMMITTED",
+      "orderTotal": 291.28,
+      "deliveryPriority": "HIGH",
+      "slaHours": 24,
+      "verificationDecision": null,
+      "paymentStatus": "APPROVED",
+      "transactionId": "TXN-47A195C1-F18",
+      "declineReason": null,
+      "shipmentId": "SHP-ORD-2008",
+      "trackingNumber": "TRK9EB0257292"
+    },
+    "actualEndEvents": [
+      "EndEvent_OrderFulfilled"
+    ],
+    "status": "PASS"
+  }
+]

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_order-priority" name="Order delivery priority" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.49.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <decision id="order-priority" name="Order delivery priority">
+    <description>Educational fulfilment rules. FIRST hit policy: the most urgent delivery promise is checked first; STANDARD orders are split by value.</description>
+    <decisionTable id="DecisionTable_order-priority" hitPolicy="FIRST">
+      <input id="Input_delivery" label="Delivery preference">
+        <inputExpression id="InputExpression_delivery" typeRef="string">
+          <text>deliveryPreference</text>
+        </inputExpression>
+      </input>
+      <input id="Input_category" label="Customer category">
+        <inputExpression id="InputExpression_category" typeRef="string">
+          <text>customerCategory</text>
+        </inputExpression>
+      </input>
+      <input id="Input_total" label="Order total (EUR)">
+        <inputExpression id="InputExpression_total" typeRef="number">
+          <text>orderTotal</text>
+        </inputExpression>
+      </input>
+      <output id="Output_priority" label="Delivery priority" name="deliveryPriority" typeRef="string">
+        <outputValues id="OutputValues_priority">
+          <text>"CRITICAL","HIGH","NORMAL","LOW"</text>
+        </outputValues>
+      </output>
+      <output id="Output_sla" label="SLA (hours)" name="slaHours" typeRef="number">
+      </output>
+      <output id="Output_ruleId" label="Rule ID" name="ruleId" typeRef="string">
+      </output>
+      <rule id="Rule_order_priority_1">
+        <description>Same-day delivery is always the most urgent</description>
+        <inputEntry id="In_1_0">
+          <text>"SAME_DAY"</text>
+        </inputEntry>
+        <inputEntry id="In_1_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_1_2">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_1_0">
+          <text>"CRITICAL"</text>
+        </outputEntry>
+        <outputEntry id="Out_1_1">
+          <text>8</text>
+        </outputEntry>
+        <outputEntry id="Out_1_2">
+          <text>"OP-1"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_order_priority_2">
+        <description>Express delivery for VIP customers</description>
+        <inputEntry id="In_2_0">
+          <text>"EXPRESS"</text>
+        </inputEntry>
+        <inputEntry id="In_2_1">
+          <text>"VIP"</text>
+        </inputEntry>
+        <inputEntry id="In_2_2">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_2_0">
+          <text>"CRITICAL"</text>
+        </outputEntry>
+        <outputEntry id="Out_2_1">
+          <text>12</text>
+        </outputEntry>
+        <outputEntry id="Out_2_2">
+          <text>"OP-2"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_order_priority_3">
+        <description>Express delivery for everyone else</description>
+        <inputEntry id="In_3_0">
+          <text>"EXPRESS"</text>
+        </inputEntry>
+        <inputEntry id="In_3_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_3_2">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_3_0">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="Out_3_1">
+          <text>24</text>
+        </outputEntry>
+        <outputEntry id="Out_3_2">
+          <text>"OP-3"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_order_priority_4">
+        <description>VIP customers get priority even on standard delivery</description>
+        <inputEntry id="In_4_0">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_4_1">
+          <text>"VIP"</text>
+        </inputEntry>
+        <inputEntry id="In_4_2">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="Out_4_0">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="Out_4_1">
+          <text>24</text>
+        </outputEntry>
+        <outputEntry id="Out_4_2">
+          <text>"OP-4"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_order_priority_5">
+        <description>Standard delivery, high basket value</description>
+        <inputEntry id="In_5_0">
+          <text>"STANDARD"</text>
+        </inputEntry>
+        <inputEntry id="In_5_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_5_2">
+          <text>&gt;= 500</text>
+        </inputEntry>
+        <outputEntry id="Out_5_0">
+          <text>"NORMAL"</text>
+        </outputEntry>
+        <outputEntry id="Out_5_1">
+          <text>48</text>
+        </outputEntry>
+        <outputEntry id="Out_5_2">
+          <text>"OP-5"</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_order_priority_6">
+        <description>Standard delivery, low basket value</description>
+        <inputEntry id="In_6_0">
+          <text>"STANDARD"</text>
+        </inputEntry>
+        <inputEntry id="In_6_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="In_6_2">
+          <text>&lt; 500</text>
+        </inputEntry>
+        <outputEntry id="Out_6_0">
+          <text>"LOW"</text>
+        </outputEntry>
+        <outputEntry id="Out_6_1">
+          <text>96</text>
+        </outputEntry>
+        <outputEntry id="Out_6_2">
+          <text>"OP-6"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_1">
+      <dmndi:DMNShape id="DMNShape_order-priority" dmnElementRef="order-priority">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

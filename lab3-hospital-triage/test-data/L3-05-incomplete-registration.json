@@ -1,0 +1,41 @@
+{
+  "id": "L3-05",
+  "title": "Incomplete registration returned to patient",
+  "category": "validation",
+  "processId": "patient-appointment-triage",
+  "app": "http://localhost:8083",
+  "expected": {
+    "endEvent": "EndEvent_RequestIncomplete",
+    "route": "Validate registration (invalid) → request missing details → returned"
+  },
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "slotCount",
+    "bookingStatus",
+    "bookingReference",
+    "appointmentSlot"
+  ],
+  "variables": {
+    "patientAge": 40,
+    "appointmentPreference": {
+      "department": "GENERAL_PRACTICE",
+      "timeOfDay": "ANY"
+    },
+    "symptomsSummary": "Headache",
+    "symptomDurationDays": 2
+  },
+  "steps": [
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L3-05",
+      "waitFor": "parked"
+    }
+  ]
+}

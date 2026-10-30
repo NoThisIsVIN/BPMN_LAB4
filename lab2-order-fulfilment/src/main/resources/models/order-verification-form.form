@@ -1,0 +1,64 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.8.0",
+  "exporter": { "name": "Camunda Modeler", "version": "5.49.0" },
+  "schemaVersion": 18,
+  "id": "order-verification-form",
+  "type": "default",
+  "components": [
+    {
+      "id": "Text_Header",
+      "type": "text",
+      "text": "# Verify high-value order\nOrder **{{orderId}}** from **{{customerName}}** ({{customerReference}}, category **{{customerCategory}}**)"
+    },
+    {
+      "id": "Group_Order",
+      "type": "group",
+      "label": "Order",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Order",
+          "type": "text",
+          "text": "| Field | Value |\n|---|---|\n| Product | {{productName}} ({{productId}}) |\n| Quantity | {{quantity}} |\n| Unit price | {{unitPrice}} {{currency}} |\n| Subtotal | {{subtotal}} |\n| Discount | {{discount}} |\n| Shipping fee | {{shippingFee}} |\n| VAT | {{tax}} |\n| **Order total** | **{{orderTotal}} {{currency}}** |"
+        }
+      ]
+    },
+    {
+      "id": "Group_Fulfilment",
+      "type": "group",
+      "label": "Stock & delivery",
+      "showOutline": true,
+      "components": [
+        {
+          "id": "Text_Fulfilment",
+          "type": "text",
+          "text": "| Field | Value |\n|---|---|\n| Stock status | {{stockStatus}} |\n| Reservation | {{reservationId}} ({{warehouse}}) |\n| Delivery preference | {{deliveryPreference}} |\n| Delivery priority (DMN) | **{{deliveryPriority}}** – SLA {{slaHours}} h |\n| Payment token (mock) | {{paymentToken}} |"
+        }
+      ]
+    },
+    {
+      "id": "Text_WhyReview",
+      "type": "text",
+      "text": "_Manual verification is required when the order total is at least 2 000 EUR (high value), or when a NEW customer orders at least 1 000 EUR (exception). Payment has **not** been taken yet._"
+    },
+    {
+      "id": "Field_VerificationDecision",
+      "type": "radio",
+      "label": "Verification decision",
+      "key": "verificationDecision",
+      "values": [
+        { "label": "Approve – proceed to payment", "value": "APPROVED" },
+        { "label": "Reject – cancel order and release stock", "value": "REJECTED" }
+      ],
+      "validate": { "required": true }
+    },
+    {
+      "id": "Field_VerificationComment",
+      "type": "textarea",
+      "label": "Comment (kept in the order record)",
+      "key": "verificationComment",
+      "validate": { "required": true, "minLength": 5 }
+    }
+  ]
+}

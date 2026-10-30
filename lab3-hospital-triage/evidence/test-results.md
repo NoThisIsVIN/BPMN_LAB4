@@ -1,0 +1,10 @@
+| ID | Scenario | Category | Expected route | Actual outcome | Instance key | Status |
+|---|---|---|---|---|---|---|
+| L3-01 | Routine request with an available slot | success | Validate → DMN ROUTINE (TR-7) → request availability → REST slots (found) → book → confirmation | EndEvent_AppointmentBooked | `2251799813711753` | **PASS** |
+| L3-02 | Moderate pain routed to priority staff review, staff books | manual-review | DMN PRIORITY_REVIEW (TR-5) → Priority staff review (BOOK_APPOINTMENT) → slots → book → confirmation | EndEvent_AppointmentBooked | `2251799813711866` | **PASS** |
+| L3-03 | Chest pain routed to immediate clinical assessment, referred to ED | manual-review | DMN URGENT_ASSESSMENT (TR-1) → Immediate clinical assessment (EMERGENCY_REFERRAL) → hand over to ED | EndEvent_EmergencyReferral | `2251799813712137` | **PASS** |
+| L3-04 | No appointment slot available (DERMATOLOGY), staff waitlists | rejection | DMN ROUTINE → slots (0 found) → Resolve scheduling (WAITLIST) → notify patient → waitlisted | EndEvent_Waitlisted | `2251799813712305` | **PASS** |
+| L3-05 | Incomplete registration returned to patient | validation | Validate registration (invalid) → request missing details → returned | EndEvent_RequestIncomplete | `2251799813712462` | **PASS** |
+| L3-06 | Scheduling API fails → incident → fault repaired → retried → booked | failure-recovery | REST slots fails (HTTP 503, 3 retries) → incident → fault off → retry → slots → book → confirmation | EndEvent_AppointmentBooked (after incident: JOB_NO_RETRIES) | `2251799813712521` | **PASS** |
+| L3-07 | Priority review escalated to urgent, urgent same-day slot booked | manual-review | DMN PRIORITY_REVIEW (TR-4) → staff ESCALATE_URGENT → Immediate assessment (BOOK_URGENT_SLOT) → same-day slot booked | EndEvent_AppointmentBooked | `2251799813712794` | **PASS** |
+| L3-08 | No slot available, scheduling staff assigns a manual slot | manual-review | slots (0 found) → Resolve scheduling (MANUAL_SLOT) → confirmation | EndEvent_AppointmentBooked | `2251799813712952` | **PASS** |

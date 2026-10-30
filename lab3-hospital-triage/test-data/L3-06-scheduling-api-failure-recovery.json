@@ -1,0 +1,82 @@
+{
+  "id": "L3-06",
+  "title": "Scheduling API fails → incident → fault repaired → retried → booked",
+  "category": "failure-recovery",
+  "processId": "patient-appointment-triage",
+  "app": "http://localhost:8083",
+  "expected": {
+    "endEvent": "EndEvent_AppointmentBooked",
+    "route": "REST slots fails (HTTP 503, 3 retries) → incident → fault off → retry → slots → book → confirmation"
+  },
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "slotCount",
+    "bookingStatus",
+    "bookingReference",
+    "appointmentSlot"
+  ],
+  "variables": {
+    "patientAge": 45,
+    "appointmentPreference": {
+      "department": "RESPIRATORY",
+      "preferredDate": "2026-11-03",
+      "timeOfDay": "ANY"
+    },
+    "symptomsSummary": "Persistent wheeze in the mornings",
+    "painLevel": 3,
+    "symptomDurationDays": 6,
+    "patientReference": "SYN-P-0006"
+  },
+  "steps": [
+    {
+      "do": "fault",
+      "name": "scheduling-api-down",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "expectIncident",
+      "elementId": "Task_RetrieveSlots",
+      "timeout": 150
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "07-operate-incident"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-incident",
+      "name": "08-operate-incident-detail"
+    },
+    {
+      "do": "fault",
+      "name": "scheduling-api-down",
+      "enabled": false
+    },
+    {
+      "do": "retryIncident"
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "09-operate-recovered",
+      "waitFor": "parked"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-variables",
+      "name": "10-operate-variables",
+      "waitFor": "parked"
+    }
+  ]
+}

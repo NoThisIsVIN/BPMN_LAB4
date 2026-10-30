@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8082/mock/payment-gateway/charges",
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    "body": {
+      "orderId": "ORD-API-gateway_error",
+      "amount": 215.76,
+      "currency": "EUR",
+      "paymentToken": "tok_test_gateway_error",
+      "customerReference": "CUST-0001"
+    }
+  },
+  "response": {
+    "status": 503,
+    "body": {
+      "status": 503,
+      "error": "Payment gateway temporarily unavailable"
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "id": "L1-07",
+  "title": "Credit bureau times out (8 s > 5 s limit) -> manual review -> officer rejects",
+  "category": "failure-recovery",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanRejected",
+    "route": "Validate -> REST timeout (HTTP 408) -> error boundary -> manual review -> reject -> Loan rejected"
+  },
+  "variables": {
+    "applicationId": "LA-2026-0007",
+    "applicantId": "APP-TIMEOUT",
+    "fullName": "Synthetic Applicant Golf",
+    "email": "synthetic.applicant.golf@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 3900,
+    "monthlyDebtPayments": 800,
+    "loanAmount": 22000,
+    "loanTermMonths": 36,
+    "loanPurpose": "Holiday"
+  },
+  "steps": [
+    {
+      "do": "completeTask",
+      "elementId": "Task_ManualReview",
+      "variables": {
+        "officerDecision": "REJECTED",
+        "officerComment": "No credit data and instalment too high relative to income."
+      }
+    },
+    {
+      "do": "wait"
+    }
+  ],
+  "reportVariables": [
+    "validationPassed",
+    "validationErrors",
+    "creditCheckStatus",
+    "creditScore",
+    "creditRiskBand",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "creditApiErrorCode",
+    "officerDecision"
+  ]
+}
