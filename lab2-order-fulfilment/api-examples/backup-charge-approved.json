@@ -1,0 +1,30 @@
+{
+  "note": "Backup provider, approved charge (REST connector 'Charge payment \u2013 backup provider').",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8082/mock/payment-gateway/backup/charges",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "orderId": "ORD-API-3",
+      "amount": 409.79,
+      "currency": "EUR",
+      "paymentToken": "tok_test_approve",
+      "customerReference": "CUST-0001"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "provider": "BACKUP",
+      "transactionId": "TXN-7A05394A-071",
+      "orderId": "ORD-API-3",
+      "amount": 409.79,
+      "currency": "EUR",
+      "status": "APPROVED",
+      "declineReason": null,
+      "processedAt": "2026-10-30T19:20:36.596918700+05:30"
+    }
+  }
+}

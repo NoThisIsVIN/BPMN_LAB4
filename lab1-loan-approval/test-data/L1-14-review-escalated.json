@@ -1,0 +1,82 @@
+{
+  "id": "L1-14",
+  "title": "Officer does not act -> reminder after 24 h -> escalated to a senior officer after 48 h -> approved",
+  "category": "timeout",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanDisbursed",
+    "route": "DMN LD-6 Manual review -> reminder timer (5 s in the test) -> escalation timer (15 s) cancels the review -> senior officer approves -> accepted -> disbursed"
+  },
+  "variables": {
+    "applicationId": "LA-14-${RUN}",
+    "applicantId": "APP-1003",
+    "fullName": "Synthetic Applicant November",
+    "email": "synthetic.applicant.november@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 5400,
+    "monthlyDebtPayments": 900,
+    "loanAmount": 30000,
+    "loanTermMonths": 72,
+    "loanPurpose": "Home renovation",
+    "reviewReminderAfter": "PT5S",
+    "reviewEscalationAfter": "PT15S"
+  },
+  "steps": [
+    {
+      "do": "waitForElement",
+      "elementId": "Task_SeniorReview"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L1-14-escalated-to-senior"
+    },
+    {
+      "do": "completeTask",
+      "elementId": "Task_SeniorReview",
+      "variables": {
+        "officerDecision": "APPROVED",
+        "officerComment": "Escalated case: income verified, approved with standard terms."
+      }
+    },
+    {
+      "do": "publishMessage",
+      "name": "loan-offer-response",
+      "correlationKey": "LA-14-${RUN}",
+      "waitForElement": "Task_WaitForOfferResponse",
+      "variables": {
+        "offerAccepted": true
+      }
+    },
+    {
+      "do": "wait"
+    }
+  ],
+  "reportVariables": [
+    "applicationComplete",
+    "applicantEligible",
+    "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
+    "creditCheckStatus",
+    "creditBureauUsed",
+    "creditScore",
+    "creditRiskBand",
+    "primaryBureauError",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference",
+    "officerDecision",
+    "officerReminder"
+  ]
+}

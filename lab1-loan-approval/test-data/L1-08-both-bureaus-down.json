@@ -1,0 +1,101 @@
+{
+  "id": "L1-08",
+  "title": "Both credit bureaus down -> loan officer decides without a score -> approves",
+  "category": "fallback",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanDisbursed",
+    "route": "primary 503 -> backup 503 -> CREDIT_API_ERROR -> manual review without score -> approve -> accepted -> disbursed"
+  },
+  "variables": {
+    "applicationId": "LA-08-${RUN}",
+    "applicantId": "APP-1008",
+    "fullName": "Synthetic Applicant Hotel",
+    "email": "synthetic.applicant.hotel@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 5600,
+    "monthlyDebtPayments": 350,
+    "loanAmount": 18000,
+    "loanTermMonths": 48,
+    "loanPurpose": "Home renovation"
+  },
+  "steps": [
+    {
+      "do": "fault",
+      "name": "primary-bureau-down",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "fault",
+      "name": "backup-bureau-down",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "waitForElement",
+      "elementId": "Task_ManualReview"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L1-08-both-bureaus-down"
+    },
+    {
+      "do": "fault",
+      "name": "primary-bureau-down",
+      "enabled": false
+    },
+    {
+      "do": "fault",
+      "name": "backup-bureau-down",
+      "enabled": false
+    },
+    {
+      "do": "completeTask",
+      "elementId": "Task_ManualReview",
+      "variables": {
+        "officerDecision": "APPROVED",
+        "officerComment": "Both bureaus offline; payslips and bank statements verified manually."
+      }
+    },
+    {
+      "do": "publishMessage",
+      "name": "loan-offer-response",
+      "correlationKey": "LA-08-${RUN}",
+      "waitForElement": "Task_WaitForOfferResponse",
+      "variables": {
+        "offerAccepted": true
+      }
+    },
+    {
+      "do": "wait"
+    }
+  ],
+  "reportVariables": [
+    "applicationComplete",
+    "applicantEligible",
+    "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
+    "creditCheckStatus",
+    "creditBureauUsed",
+    "creditScore",
+    "creditRiskBand",
+    "primaryBureauError",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference",
+    "officerDecision"
+  ]
+}

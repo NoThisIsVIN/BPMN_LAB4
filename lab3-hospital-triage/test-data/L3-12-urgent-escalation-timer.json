@@ -1,0 +1,67 @@
+{
+  "id": "L3-12",
+  "title": "Urgent assessment not picked up → duty manager escalated → then assessed → ED referral",
+  "category": "timeout",
+  "processId": "patient-appointment-triage",
+  "app": "http://localhost:8083",
+  "expected": {
+    "endEvent": "EndEvent_EmergencyReferral",
+    "route": "DMN URGENT → escalation timer (6 s) alerts duty manager → assessment completed → emergency referral"
+  },
+  "variables": {
+    "patientReference": "SYN-P-0112",
+    "patientAge": 58,
+    "appointmentPreference": {
+      "department": "RESPIRATORY",
+      "preferredDate": "2026-11-03",
+      "timeOfDay": "ANY"
+    },
+    "symptomsSummary": "Short of breath when lying down",
+    "painLevel": 5,
+    "symptomDurationDays": 1,
+    "breathingDifficulty": true,
+    "urgentEscalationAfter": "PT6S"
+  },
+  "steps": [
+    {
+      "do": "waitForElement",
+      "elementId": "EndEvent_DutyManagerAlerted",
+      "state": "COMPLETED",
+      "timeout": 90
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L3-12-escalated"
+    },
+    {
+      "do": "completeTask",
+      "elementId": "Task_UrgentAssessment",
+      "variables": {
+        "assessmentOutcome": "EMERGENCY_REFERRAL",
+        "assessmentNotes": "Breathing difficulty at rest, refer to emergency department"
+      }
+    },
+    {
+      "do": "wait"
+    }
+  ],
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "searchSite",
+    "slotCount",
+    "firstAttemptConflicts",
+    "requeried",
+    "bookingStatus",
+    "bookingReference",
+    "bookingSite",
+    "appointmentSlot",
+    "patientConfirmation"
+  ]
+}

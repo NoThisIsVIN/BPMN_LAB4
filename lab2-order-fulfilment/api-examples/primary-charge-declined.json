@@ -1,0 +1,30 @@
+{
+  "note": "A decline is a business answer: HTTP 200 with status DECLINED -> gateway 'Payment approved?' takes the Declined path.",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8082/mock/payment-gateway/primary/charges",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "orderId": "ORD-API-2",
+      "amount": 553.79,
+      "currency": "EUR",
+      "paymentToken": "tok_test_decline_funds",
+      "customerReference": "CUST-0004"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "provider": "PRIMARY",
+      "transactionId": "TXN-C7A0869F-21C",
+      "orderId": "ORD-API-2",
+      "amount": 553.79,
+      "currency": "EUR",
+      "status": "DECLINED",
+      "declineReason": "Insufficient funds",
+      "processedAt": "2026-10-30T19:20:36.549192900+05:30"
+    }
+  }
+}

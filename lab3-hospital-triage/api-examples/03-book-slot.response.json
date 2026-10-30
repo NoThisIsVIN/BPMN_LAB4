@@ -1,15 +1,16 @@
 {
-    "bookingReference": "BK-5954638D",
+    "bookingReference": "BK-67AE3F3C",
     "status": "CONFIRMED",
-    "patientReference": "SYN-P-0101",
-    "availabilityRequestId": "AR-99CD7EE1",
+    "patientReference": "SYN-P-0901",
+    "availabilityRequestId": "AR-5D1F9D14",
     "slot": {
-        "clinician": "Clinician A (synthetic)",
-        "date": "2026-10-31",
-        "time": "08:00",
-        "location": "Outpatients block A, room 1",
+        "slotId": "MH-GEN-20261030-1000",
+        "site": "MAIN_HOSPITAL",
         "department": "GENERAL_PRACTICE",
-        "slotId": "GEN-20261031-0800"
+        "date": "2026-10-30",
+        "time": "10:00",
+        "clinician": "Clinician C (synthetic)",
+        "location": "Outpatients block A, room 3"
     },
-    "bookedAt": "2026-10-30T17:43:11.869063900+05:30"
+    "bookedAt": "2026-10-30T19:24:46.803692400+05:30"
 }

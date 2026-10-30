@@ -6,10 +6,10 @@
   "app": "http://localhost:8081",
   "expected": {
     "endEvent": "EndEvent_LoanRejected",
-    "route": "Validate -> credit score 512 -> DMN LD-1 Rejected -> rejection notice -> Loan rejected"
+    "route": "Validate -> KYC ok -> score 512 -> DMN LD-1 Rejected -> rejection notice"
   },
   "variables": {
-    "applicationId": "LA-2026-0002",
+    "applicationId": "LA-02-${RUN}",
     "applicantId": "APP-1002",
     "fullName": "Synthetic Applicant Bravo",
     "email": "synthetic.applicant.bravo@example.org",
@@ -32,11 +32,16 @@
     }
   ],
   "reportVariables": [
-    "validationPassed",
+    "applicationComplete",
+    "applicantEligible",
     "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
     "creditCheckStatus",
+    "creditBureauUsed",
     "creditScore",
     "creditRiskBand",
+    "primaryBureauError",
     "creditCheckError",
     "debtToIncomeRatio",
     "loanToIncomeRatio",
@@ -45,6 +50,8 @@
     "decisionSource",
     "decisionReason",
     "offerId",
-    "interestRate"
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference"
   ]
 }

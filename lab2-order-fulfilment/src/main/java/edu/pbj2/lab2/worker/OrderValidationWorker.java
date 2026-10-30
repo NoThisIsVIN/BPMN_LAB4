@@ -3,6 +3,7 @@ package edu.pbj2.lab2.worker;
 import edu.pbj2.lab2.domain.CustomerRegistry;
 import edu.pbj2.lab2.domain.InventoryService;
 import edu.pbj2.lab2.domain.OrderValidator;
+import edu.pbj2.lab2.domain.PaymentRetryPolicy;
 import io.camunda.client.annotation.JobWorker;
 import io.camunda.client.api.response.ActivatedJob;
 import java.util.Map;
@@ -10,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-/** Service task "Validate order" (job type order.validate). */
+/** Service task "Validate order" (job type order.validate). Also sets the payment-retry defaults. */
 @Component
 public class OrderValidationWorker {
 
@@ -25,6 +26,7 @@ public class OrderValidationWorker {
   public Map<String, Object> validate(ActivatedJob job) {
     Map<String, Object> vars = job.getVariablesAsMap();
     Map<String, Object> result = validator.validate(vars);
+    result.putAll(PaymentRetryPolicy.defaults(vars));
     LOG.info("[{}] order valid={} errors={}", vars.get("orderId"), result.get("orderValid"), result.get("validationErrors"));
     return result;
   }

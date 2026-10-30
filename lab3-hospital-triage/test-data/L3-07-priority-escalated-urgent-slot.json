@@ -1,27 +1,15 @@
 {
   "id": "L3-07",
-  "title": "Priority review escalated to urgent, urgent same-day slot booked",
+  "title": "Priority review escalated to urgent → same-day slot → confirmed",
   "category": "manual-review",
   "processId": "patient-appointment-triage",
   "app": "http://localhost:8083",
   "expected": {
-    "endEvent": "EndEvent_AppointmentBooked",
-    "route": "DMN PRIORITY_REVIEW (TR-4) → staff ESCALATE_URGENT → Immediate assessment (BOOK_URGENT_SLOT) → same-day slot booked"
+    "endEvent": "EndEvent_AppointmentConfirmed",
+    "route": "DMN PRIORITY_REVIEW → staff escalates → urgent assessment books urgent slot (max wait 0) → confirmed"
   },
-  "reportVariables": [
-    "urgencyCategory",
-    "triageReason",
-    "maxWaitDays",
-    "registrationErrors",
-    "reviewOutcome",
-    "assessmentOutcome",
-    "schedulingOutcome",
-    "slotCount",
-    "bookingStatus",
-    "bookingReference",
-    "appointmentSlot"
-  ],
   "variables": {
+    "patientReference": "SYN-P-0107",
     "patientAge": 72,
     "appointmentPreference": {
       "department": "GENERAL_PRACTICE",
@@ -31,7 +19,6 @@
     "symptomsSummary": "High temperature and fatigue since yesterday",
     "painLevel": 4,
     "symptomDurationDays": 1,
-    "patientReference": "SYN-P-0007",
     "highFever": true,
     "chronicCondition": true
   },
@@ -53,14 +40,41 @@
       }
     },
     {
-      "do": "sleep",
-      "seconds": 5
+      "do": "publishMessage",
+      "name": "appointment-confirmed",
+      "correlationKey": "SYN-P-0107",
+      "waitForElement": "Task_WaitForConfirmation",
+      "variables": {
+        "confirmedVia": "SMS reply (synthetic)"
+      }
+    },
+    {
+      "do": "waitForElement",
+      "elementId": "EndEvent_AppointmentConfirmed",
+      "state": "COMPLETED"
     },
     {
       "do": "screenshot",
       "view": "operate-instance",
-      "name": "04-operate-instance-L3-07",
-      "waitFor": "parked"
+      "name": "04-operate-instance-L3-07"
     }
+  ],
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "searchSite",
+    "slotCount",
+    "firstAttemptConflicts",
+    "requeried",
+    "bookingStatus",
+    "bookingReference",
+    "bookingSite",
+    "appointmentSlot",
+    "patientConfirmation"
   ]
 }

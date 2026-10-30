@@ -1,27 +1,15 @@
 {
   "id": "L3-04",
-  "title": "No appointment slot available (DERMATOLOGY), staff waitlists",
+  "title": "No slot at main hospital or partner clinic (DERMATOLOGY) → staff waitlists",
   "category": "rejection",
   "processId": "patient-appointment-triage",
   "app": "http://localhost:8083",
   "expected": {
     "endEvent": "EndEvent_Waitlisted",
-    "route": "DMN ROUTINE → slots (0 found) → Resolve scheduling (WAITLIST) → notify patient → waitlisted"
+    "route": "main hospital 0 slots → partner clinic 0 slots → scheduling staff → waiting list"
   },
-  "reportVariables": [
-    "urgencyCategory",
-    "triageReason",
-    "maxWaitDays",
-    "registrationErrors",
-    "reviewOutcome",
-    "assessmentOutcome",
-    "schedulingOutcome",
-    "slotCount",
-    "bookingStatus",
-    "bookingReference",
-    "appointmentSlot"
-  ],
   "variables": {
+    "patientReference": "SYN-P-0104",
     "patientAge": 29,
     "appointmentPreference": {
       "department": "DERMATOLOGY",
@@ -30,8 +18,7 @@
     },
     "symptomsSummary": "Itchy rash on forearm for five days",
     "painLevel": 1,
-    "symptomDurationDays": 5,
-    "patientReference": "SYN-P-0004"
+    "symptomDurationDays": 5
   },
   "steps": [
     {
@@ -39,18 +26,34 @@
       "elementId": "Task_ResolveScheduling",
       "variables": {
         "schedulingOutcome": "WAITLIST",
-        "schedulingNotes": "No dermatology capacity in window, waitlisted"
+        "schedulingNotes": "No dermatology capacity at either site, waitlisted"
       }
     },
     {
-      "do": "sleep",
-      "seconds": 5
+      "do": "wait"
     },
     {
       "do": "screenshot",
       "view": "operate-instance",
-      "name": "04-operate-instance-L3-04",
-      "waitFor": "parked"
+      "name": "04-operate-instance-L3-04"
     }
+  ],
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "searchSite",
+    "slotCount",
+    "firstAttemptConflicts",
+    "requeried",
+    "bookingStatus",
+    "bookingReference",
+    "bookingSite",
+    "appointmentSlot",
+    "patientConfirmation"
   ]
 }

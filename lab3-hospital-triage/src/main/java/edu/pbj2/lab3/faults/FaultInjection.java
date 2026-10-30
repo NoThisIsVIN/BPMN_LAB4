@@ -14,8 +14,15 @@ public class FaultInjection {
 
   /** Mock scheduling API answers the slot query with HTTP 503 (registration still works). */
   public static final String SCHEDULING_API_DOWN = "scheduling-api-down";
+  /**
+   * Another patient grabs every slot we try to book (HTTP 409) until the next slot query; the
+   * switch turns itself off then, which reproduces "slot taken while booking -> re-query".
+   */
+  public static final String BOOKING_CONFLICT_ONCE = "booking-conflict-once";
 
-  private final Map<String, Boolean> faults = new ConcurrentHashMap<>(Map.of(SCHEDULING_API_DOWN, false));
+  private final Map<String, Boolean> faults = new ConcurrentHashMap<>(Map.of(
+      SCHEDULING_API_DOWN, false,
+      BOOKING_CONFLICT_ONCE, false));
 
   public boolean isActive(String fault) {
     return faults.getOrDefault(fault, false);

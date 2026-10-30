@@ -1,0 +1,30 @@
+{
+  "note": "Primary provider, approved charge (REST connector 'Charge payment \u2013 primary provider').",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8082/mock/payment-gateway/primary/charges",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "orderId": "ORD-API-1",
+      "amount": 215.76,
+      "currency": "EUR",
+      "paymentToken": "tok_test_approve",
+      "customerReference": "CUST-0001"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "provider": "PRIMARY",
+      "transactionId": "TXN-1111FB8F-631",
+      "orderId": "ORD-API-1",
+      "amount": 215.76,
+      "currency": "EUR",
+      "status": "APPROVED",
+      "declineReason": null,
+      "processedAt": "2026-10-30T19:20:36.542817500+05:30"
+    }
+  }
+}

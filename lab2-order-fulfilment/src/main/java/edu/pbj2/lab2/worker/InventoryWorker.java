@@ -2,6 +2,7 @@ package edu.pbj2.lab2.worker;
 
 import edu.pbj2.lab2.domain.InventoryService;
 import edu.pbj2.lab2.faults.FaultInjection;
+import io.camunda.client.annotation.CustomHeaders;
 import io.camunda.client.annotation.JobWorker;
 import io.camunda.client.annotation.Variable;
 import io.camunda.client.api.response.ActivatedJob;
@@ -15,7 +16,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Service tasks backed by the simulated inventory service:
- * "Check inventory &amp; reserve stock" (order.check-inventory) and "Release reserved stock" (order.release-stock).
+ * "Check inventory – primary / secondary warehouse" (order.check-inventory, task header {@code warehouse})
+ * and "Release reserved stock" (order.release-stock).
  */
 @Component
 public class InventoryWorker {
@@ -36,8 +38,8 @@ public class InventoryWorker {
    * clean, operator-readable error message instead of a Java stack trace.
    */
   @JobWorker(type = "order.check-inventory", autoComplete = false)
-  public void checkAndReserve(JobClient client, ActivatedJob job, @Variable String orderId,
-      @Variable String productId, @Variable Integer quantity) {
+  public void checkAndReserve(JobClient client, ActivatedJob job, @CustomHeaders Map<String, String> headers,
+      @Variable String orderId, @Variable String productId, @Variable Integer quantity) {
     if (faults.isActive(FaultInjection.INVENTORY_SERVICE_DOWN)) {
       // Transient outage: Zeebe retries with back-off; when retries reach 0 an incident is raised.
       int retriesLeft = job.getRetries() - 1;
@@ -52,19 +54,20 @@ public class InventoryWorker {
       return;
     }
 
+    String role = headers.getOrDefault("warehouse", "PRIMARY");
+    String warehouse = InventoryService.warehouseFor(role);
+    int available = inventory.available(warehouse, productId);
+
     Map<String, Object> out = new LinkedHashMap<>();
-    var product = inventory.product(productId).orElseThrow();
-    out.put("warehouse", product.warehouse());
-    inventory.reserve(productId, quantity).ifPresentOrElse(r -> {
+    out.put(role.toLowerCase() + "WarehouseAvailable", available);
+    inventory.reserve(warehouse, productId, quantity).ifPresentOrElse(r -> {
       out.put("stockStatus", "AVAILABLE");
+      out.put("warehouse", warehouse);
+      out.put("stockSource", role.toUpperCase());
       out.put("reservationId", r.id());
       out.put("reservationStatus", r.status());
-      out.put("availableQuantity", inventory.available(productId) + quantity);
-    }, () -> {
-      out.put("stockStatus", "INSUFFICIENT");
-      out.put("availableQuantity", inventory.available(productId));
-    });
-    LOG.info("[{}] inventory check {} x{}: {}", orderId, productId, quantity, out);
+    }, () -> out.put("stockStatus", "INSUFFICIENT"));
+    LOG.info("[{}] inventory check {} x{} at {} ({}): {}", orderId, productId, quantity, warehouse, role, out);
     client.newCompleteCommand(job.getKey()).variables(out).send().join();
   }
 

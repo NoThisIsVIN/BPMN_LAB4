@@ -27,4 +27,8 @@ public class SchedulingClient {
     return http.post().uri("/bookings").contentType(MediaType.APPLICATION_JSON)
         .body(booking).retrieve().body(JSON);
   }
+
+  public Map<String, Object> cancel(String bookingReference) {
+    return http.post().uri("/bookings/{ref}/cancellation", bookingReference).retrieve().body(JSON);
+  }
 }

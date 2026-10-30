@@ -1,7 +1,10 @@
 {
   "executionPlatform": "Camunda Cloud",
   "executionPlatformVersion": "8.8.0",
-  "exporter": { "name": "Camunda Modeler", "version": "5.49.0" },
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.49.0"
+  },
   "schemaVersion": 18,
   "id": "scheduling-resolution-form",
   "type": "default",
@@ -25,7 +28,7 @@
         {
           "id": "Text_Search",
           "type": "text",
-          "text": "| Field | Value |\n|---|---|\n| Availability request | {{availabilityRequestId}} |\n| Search window | {{searchFromDate}} → {{searchToDate}} |\n| Time of day | {{timeOfDay}} |\n| Slots found | **{{slotCount}}** |\n| Max wait (days) | {{maxWaitDays}} |"
+          "text": "| Field | Value |\n|---|---|\n| Availability request | {{availabilityRequestId}} |\n| Search window | {{searchFromDate}} → {{searchToDate}} |\n| Time of day | {{timeOfDay}} |\n| Last site searched | {{searchSite}} |\n| Slots found there | **{{slotCount}}** |\n| Booking conflicts (slot taken by others) | {{slotConflicts}} |\n| Max wait (days) | {{maxWaitDays}} |\n\n_Automatic fallbacks already tried: main hospital → partner clinic, and one re-query after a booking conflict._"
         }
       ]
     },
@@ -35,10 +38,18 @@
       "label": "Scheduling outcome",
       "key": "schedulingOutcome",
       "values": [
-        { "label": "Assign a slot manually (e.g. extra clinic)", "value": "MANUAL_SLOT" },
-        { "label": "Add the patient to the waiting list", "value": "WAITLIST" }
+        {
+          "label": "Assign a slot manually (e.g. extra clinic)",
+          "value": "MANUAL_SLOT"
+        },
+        {
+          "label": "Add the patient to the waiting list",
+          "value": "WAITLIST"
+        }
       ],
-      "validate": { "required": true }
+      "validate": {
+        "required": true
+      }
     },
     {
       "id": "Field_ManualSlot",
@@ -46,14 +57,19 @@
       "label": "Manually assigned slot (date, time, location)",
       "key": "manualSlot",
       "description": "Required when assigning a slot manually",
-      "conditional": { "hide": "=schedulingOutcome != \"MANUAL_SLOT\"" }
+      "conditional": {
+        "hide": "=schedulingOutcome != \"MANUAL_SLOT\""
+      }
     },
     {
       "id": "Field_SchedulingNotes",
       "type": "textarea",
       "label": "Notes",
       "key": "schedulingNotes",
-      "validate": { "required": true, "minLength": 5 }
+      "validate": {
+        "required": true,
+        "minLength": 5
+      }
     }
   ]
 }

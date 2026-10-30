@@ -1,0 +1,24 @@
+{
+  "note": "Fault backup-payment-down on: HTTP 503. No error expression on this connector: 3 attempts, 5 s back-off, then an incident.",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8082/mock/payment-gateway/backup/charges",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "orderId": "ORD-API-4",
+      "amount": 409.79,
+      "currency": "EUR",
+      "paymentToken": "tok_test_approve",
+      "customerReference": "CUST-0001"
+    }
+  },
+  "response": {
+    "status": 503,
+    "body": {
+      "error": "Backup payment provider temporarily unavailable",
+      "status": 503
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "id": "L1-12",
+  "title": "Missing e-mail, applicant never replies -> correction window expires -> application closed",
+  "category": "timeout",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_ApplicationClosed",
+    "route": "Validate: email missing -> request missing information -> no reply within correctionTimeout (8 s in the test, 7 days by default) -> application closed"
+  },
+  "variables": {
+    "applicationId": "LA-12-${RUN}",
+    "applicantId": "APP-1001",
+    "fullName": "Synthetic Applicant Lima",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 6200,
+    "monthlyDebtPayments": 400,
+    "loanAmount": 25000,
+    "loanTermMonths": 60,
+    "loanPurpose": "Home renovation",
+    "correctionTimeout": "PT8S"
+  },
+  "steps": [
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L1-12-closed-no-reply"
+    }
+  ],
+  "reportVariables": [
+    "applicationComplete",
+    "applicantEligible",
+    "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
+    "creditCheckStatus",
+    "creditBureauUsed",
+    "creditScore",
+    "creditRiskBand",
+    "primaryBureauError",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference"
+  ]
+}

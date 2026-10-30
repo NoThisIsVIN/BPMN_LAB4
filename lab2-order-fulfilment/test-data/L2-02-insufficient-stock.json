@@ -1,12 +1,12 @@
 {
   "id": "L2-02",
-  "title": "Stock insufficient – order cannot proceed to fulfilment",
+  "title": "Both warehouses short – order cannot proceed to fulfilment",
   "category": "rejection",
   "processId": "order-fulfilment",
   "app": "http://localhost:8082",
   "expected": {
     "endEvent": "EndEvent_OutOfStock",
-    "route": "Validate → stock check INSUFFICIENT (5 requested, 2 in stock) → notify customer → cancelled"
+    "route": "Validate → primary warehouse short (2 < 5) → secondary warehouse short (1 < 5) → notify → cancelled"
   },
   "variables": {
     "orderId": "ORD-2002",
@@ -31,15 +31,25 @@
     "validationErrors",
     "customerCategory",
     "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
     "reservationId",
     "reservationStatus",
     "orderTotal",
     "deliveryPriority",
     "slaHours",
     "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
     "paymentStatus",
     "transactionId",
     "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
     "shipmentId",
     "trackingNumber"
   ]

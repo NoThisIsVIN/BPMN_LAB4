@@ -28,9 +28,11 @@ public class NotificationWorker {
       case "ORDER_CONFIRMED" -> "Order " + orderId + " is paid and on its way. Tracking number " + v.get("trackingNumber")
           + ", estimated delivery " + v.get("estimatedDelivery") + ".";
       case "ORDER_INVALID" -> "Order " + orderId + " could not be accepted: " + v.get("validationErrors");
-      case "OUT_OF_STOCK" -> "Order " + orderId + " was cancelled: only " + v.get("availableQuantity")
-          + " unit(s) of " + v.get("productId") + " in stock.";
-      case "PAYMENT_DECLINED" -> "Order " + orderId + " was cancelled: payment declined (" + v.get("declineReason") + ").";
+      case "OUT_OF_STOCK" -> "Order " + orderId + " was cancelled: neither warehouse has " + v.get("quantity")
+          + " unit(s) of " + v.get("productId") + " (primary: " + v.get("primaryWarehouseAvailable")
+          + ", secondary: " + v.get("secondaryWarehouseAvailable") + ").";
+      case "PAYMENT_DECLINED" -> "Order " + orderId + " was cancelled: payment declined (" + v.get("declineReason")
+          + ") and no new payment method was provided in time.";
       case "CANCELLED_BY_REVIEW" -> "Order " + orderId + " was cancelled after manual verification: "
           + v.get("verificationComment");
       default -> "Update on order " + orderId;

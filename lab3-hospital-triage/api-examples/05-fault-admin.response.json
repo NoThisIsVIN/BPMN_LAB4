@@ -1,1 +1,4 @@
-{"scheduling-api-down":false}
+{
+    "booking-conflict-once": false,
+    "scheduling-api-down": false
+}

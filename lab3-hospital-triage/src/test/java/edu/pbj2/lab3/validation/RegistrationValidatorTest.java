@@ -73,4 +73,28 @@ class RegistrationValidatorTest {
         .isInstanceOf(MalformedVariableException.class)
         .hasMessageContaining("chestPain");
   }
+
+  @Test
+  void timerDurationsDefaultToBusinessValuesAndCanBeOverridden() {
+    Map<String, Object> v = validRequest();
+    v.put("confirmationTimeout", "PT10S");
+
+    Map<String, Object> out = validator.validate(v);
+
+    assertThat(out).containsEntry("confirmationTimeout", "PT10S")
+        .containsEntry("confirmationReminderAfter", "PT12H")
+        .containsEntry("urgentEscalationAfter", "PT15M");
+  }
+
+  @Test
+  void invalidTimerDurationIsARegistrationError() {
+    Map<String, Object> v = validRequest();
+    v.put("urgentEscalationAfter", "15 minutes");
+
+    Map<String, Object> out = validator.validate(v);
+
+    assertThat(out.get("registrationValid")).isEqualTo(false);
+    assertThat((List<String>) out.get("registrationErrors"))
+        .containsExactly("urgentEscalationAfter must be an ISO-8601 duration such as PT15M");
+  }
 }

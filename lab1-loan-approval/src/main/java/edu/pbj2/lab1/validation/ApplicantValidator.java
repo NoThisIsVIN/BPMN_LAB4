@@ -12,6 +12,14 @@ import java.util.regex.Pattern;
 /**
  * Pure validation + affordability calculation for a loan application. No Camunda types here,
  * so the rules are unit-testable on their own.
+ *
+ * <p>Two different outcomes, because they need different handling in the process:
+ * <ul>
+ *   <li><b>complete</b> – every field is present and well-formed. Missing / malformed fields can be fixed by the
+ *       applicant, so the process asks for the missing information and validates again.</li>
+ *   <li><b>eligible</b> – the (complete) application meets the product limits (age, amount, term, income).
+ *       Not being eligible cannot be fixed by resubmitting, so it goes straight to the rejection notice.</li>
+ * </ul>
  */
 public class ApplicantValidator {
 
@@ -28,8 +36,8 @@ public class ApplicantValidator {
 
   /** @return process variables to merge into the instance */
   public Map<String, Object> validate(Map<String, Object> v) {
+    // ---- completeness (correctable by the applicant) ----
     List<String> errors = new ArrayList<>();
-
     requireText(v, "applicationId", errors);
     String applicantId = requireText(v, "applicantId", errors);
     if (applicantId != null && !APPLICANT_ID.matcher(applicantId).matches()) {
@@ -41,48 +49,57 @@ public class ApplicantValidator {
       errors.add("email is not a valid address");
     }
     requireText(v, "loanPurpose", errors);
-
-    Double age = number(v, "age");
-    if (age == null) {
-      errors.add("age is required");
-    } else if (age < 18 || age > 75) {
-      errors.add("age must be between 18 and 75 (was " + age.intValue() + ")");
-    }
-
     String employment = requireText(v, "employmentStatus", errors);
     if (employment != null && !EMPLOYMENT_STATUSES.contains(employment)) {
       errors.add("employmentStatus must be one of " + EMPLOYMENT_STATUSES);
     }
-
-    Double income = number(v, "monthlyIncome");
-    if (income == null || income <= 0) {
-      errors.add("monthlyIncome must be greater than 0");
-    }
+    Double age = requireNumber(v, "age", errors);
+    Double income = requireNumber(v, "monthlyIncome", errors);
+    Double amount = requireNumber(v, "loanAmount", errors);
+    Double term = requireNumber(v, "loanTermMonths", errors);
     Double debt = number(v, "monthlyDebtPayments");
     if (debt == null) {
       debt = 0.0;
     } else if (debt < 0) {
       errors.add("monthlyDebtPayments cannot be negative");
     }
-    Double amount = number(v, "loanAmount");
-    if (amount == null || amount < 1_000 || amount > 500_000) {
-      errors.add("loanAmount must be between 1 000 and 500 000");
-    }
-    Double term = number(v, "loanTermMonths");
-    if (term == null || term < 6 || term > 360) {
-      errors.add("loanTermMonths must be between 6 and 360");
-    }
 
     Map<String, Object> out = new LinkedHashMap<>();
-    out.put("validationPassed", errors.isEmpty());
+    out.put("applicationComplete", errors.isEmpty());
     out.put("validationErrors", errors);
-    if (errors.isEmpty()) {
-      double installment = annuity(amount, referenceApr, term.intValue());
-      out.put("monthlyInstallment", round(installment, 2));
-      out.put("debtToIncomeRatio", round((debt + installment) / income, 4));
-      out.put("loanToIncomeRatio", round(amount / (income * 12), 4));
-      out.put("monthlyDebtPayments", debt);
+    if (!errors.isEmpty()) {
+      out.put("applicantEligible", false);
+      out.put("eligibilityIssues", List.of());
+      return out;
     }
+
+    // ---- eligibility (product limits, not correctable) ----
+    List<String> issues = new ArrayList<>();
+    if (age < 18 || age > 75) {
+      issues.add("age must be between 18 and 75 (was " + age.intValue() + ")");
+    }
+    if (income <= 0) {
+      issues.add("monthly income must be greater than 0");
+    }
+    if (amount < 1_000 || amount > 500_000) {
+      issues.add("loan amount must be between 1 000 and 500 000");
+    }
+    if (term < 6 || term > 360) {
+      issues.add("loan term must be between 6 and 360 months");
+    }
+    out.put("applicantEligible", issues.isEmpty());
+    out.put("eligibilityIssues", issues);
+    if (!issues.isEmpty()) {
+      out.put("decisionReason", "Not eligible: " + String.join("; ", issues));
+      out.put("decisionSource", "ELIGIBILITY CHECK");
+      return out;
+    }
+
+    double installment = annuity(amount, referenceApr, term.intValue());
+    out.put("monthlyInstallment", round(installment, 2));
+    out.put("debtToIncomeRatio", round((debt + installment) / income, 4));
+    out.put("loanToIncomeRatio", round(amount / (income * 12), 4));
+    out.put("monthlyDebtPayments", debt);
     return out;
   }
 
@@ -104,7 +121,15 @@ public class ApplicantValidator {
     return value.toString().trim();
   }
 
-  /** Missing -> null (a validation error); present but not numeric -> MalformedVariableException. */
+  private static Double requireNumber(Map<String, Object> v, String key, List<String> errors) {
+    Double n = number(v, key);
+    if (n == null) {
+      errors.add(key + " is required");
+    }
+    return n;
+  }
+
+  /** Missing -> null; present but not numeric -> MalformedVariableException (an operator must fix it). */
   private static Double number(Map<String, Object> v, String key) {
     Object value = v.get(key);
     if (value == null) {

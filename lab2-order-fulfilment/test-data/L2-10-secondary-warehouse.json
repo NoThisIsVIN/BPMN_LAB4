@@ -1,0 +1,56 @@
+{
+  "id": "L2-10",
+  "title": "Primary warehouse sold out → secondary warehouse reserves → fulfilled",
+  "category": "fallback",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OrderFulfilled",
+    "route": "Validate → primary warehouse short (0) → secondary warehouse reserves → … → fulfilment"
+  },
+  "variables": {
+    "orderId": "ORD-2010",
+    "customerReference": "CUST-0004",
+    "productId": "PRD-5005",
+    "quantity": 1,
+    "deliveryPreference": "STANDARD",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L2-10-secondary-warehouse"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

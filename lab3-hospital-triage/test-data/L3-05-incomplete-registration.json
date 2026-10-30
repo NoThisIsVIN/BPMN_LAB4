@@ -6,21 +6,8 @@
   "app": "http://localhost:8083",
   "expected": {
     "endEvent": "EndEvent_RequestIncomplete",
-    "route": "Validate registration (invalid) → request missing details → returned"
+    "route": "Validate → registrationValid=false → request missing details → returned"
   },
-  "reportVariables": [
-    "urgencyCategory",
-    "triageReason",
-    "maxWaitDays",
-    "registrationErrors",
-    "reviewOutcome",
-    "assessmentOutcome",
-    "schedulingOutcome",
-    "slotCount",
-    "bookingStatus",
-    "bookingReference",
-    "appointmentSlot"
-  ],
   "variables": {
     "patientAge": 40,
     "appointmentPreference": {
@@ -32,10 +19,30 @@
   },
   "steps": [
     {
+      "do": "wait"
+    },
+    {
       "do": "screenshot",
       "view": "operate-instance",
-      "name": "04-operate-instance-L3-05",
-      "waitFor": "parked"
+      "name": "04-operate-instance-L3-05"
     }
+  ],
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "searchSite",
+    "slotCount",
+    "firstAttemptConflicts",
+    "requeried",
+    "bookingStatus",
+    "bookingReference",
+    "bookingSite",
+    "appointmentSlot",
+    "patientConfirmation"
   ]
 }

@@ -1,12 +1,12 @@
 {
   "id": "L2-03",
-  "title": "Payment declined by the mock gateway",
+  "title": "Payment declined, customer does not send a new payment method in time",
   "category": "rejection",
   "processId": "order-fulfilment",
   "app": "http://localhost:8082",
   "expected": {
     "endEvent": "EndEvent_PaymentDeclined",
-    "route": "Validate → reserve → total 553.79 → DMN HIGH → payment DECLINED (insufficient funds) → release stock → notify → cancelled"
+    "route": "… → primary provider DECLINED → retry allowed → ask customer → no reply within paymentRetryTimeout (8 s) → stock released → cancelled"
   },
   "variables": {
     "orderId": "ORD-2003",
@@ -14,16 +14,32 @@
     "productId": "PRD-2002",
     "quantity": 1,
     "deliveryPreference": "EXPRESS",
-    "paymentToken": "tok_test_decline_funds"
+    "paymentToken": "tok_test_decline_funds",
+    "paymentRetryTimeout": "PT8S"
   },
   "steps": [
+    {
+      "do": "waitForElement",
+      "elementId": "Task_WaitForPaymentMethod"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L2-03-waiting-for-customer"
+    },
+    {
+      "do": "waitForElement",
+      "elementId": "Boundary_NoNewPaymentMethod",
+      "state": "COMPLETED",
+      "timeout": 60
+    },
     {
       "do": "wait"
     },
     {
       "do": "screenshot",
       "view": "operate-instance",
-      "name": "04-operate-instance-L2-03"
+      "name": "04-operate-instance-L2-03-timer-fired"
     }
   ],
   "reportVariables": [
@@ -31,15 +47,25 @@
     "validationErrors",
     "customerCategory",
     "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
     "reservationId",
     "reservationStatus",
     "orderTotal",
     "deliveryPriority",
     "slaHours",
     "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
     "paymentStatus",
     "transactionId",
     "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
     "shipmentId",
     "trackingNumber"
   ]

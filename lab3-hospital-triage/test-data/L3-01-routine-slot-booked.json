@@ -1,27 +1,15 @@
 {
   "id": "L3-01",
-  "title": "Routine request with an available slot",
+  "title": "Routine request, main hospital slot booked, patient confirms",
   "category": "success",
   "processId": "patient-appointment-triage",
   "app": "http://localhost:8083",
   "expected": {
-    "endEvent": "EndEvent_AppointmentBooked",
-    "route": "Validate → DMN ROUTINE (TR-7) → request availability → REST slots (found) → book → confirmation"
+    "endEvent": "EndEvent_AppointmentConfirmed",
+    "route": "Validate → DMN ROUTINE → availability → main-hospital slots → book → ask to confirm → confirmed"
   },
-  "reportVariables": [
-    "urgencyCategory",
-    "triageReason",
-    "maxWaitDays",
-    "registrationErrors",
-    "reviewOutcome",
-    "assessmentOutcome",
-    "schedulingOutcome",
-    "slotCount",
-    "bookingStatus",
-    "bookingReference",
-    "appointmentSlot"
-  ],
   "variables": {
+    "patientReference": "SYN-P-0101",
     "patientAge": 34,
     "appointmentPreference": {
       "department": "GENERAL_PRACTICE",
@@ -30,15 +18,54 @@
     },
     "symptomsSummary": "Mild cough and sore throat for a few days",
     "painLevel": 2,
-    "symptomDurationDays": 3,
-    "patientReference": "SYN-P-0001"
+    "symptomDurationDays": 3
   },
   "steps": [
     {
+      "do": "waitForElement",
+      "elementId": "Task_WaitForConfirmation"
+    },
+    {
       "do": "screenshot",
       "view": "operate-instance",
-      "name": "04-operate-instance-L3-01",
-      "waitFor": "parked"
+      "name": "04-operate-instance-L3-01-waiting-for-confirmation"
+    },
+    {
+      "do": "publishMessage",
+      "name": "appointment-confirmed",
+      "correlationKey": "SYN-P-0101",
+      "waitForElement": "Task_WaitForConfirmation",
+      "variables": {
+        "confirmedVia": "SMS reply (synthetic)"
+      }
+    },
+    {
+      "do": "waitForElement",
+      "elementId": "EndEvent_AppointmentConfirmed",
+      "state": "COMPLETED"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L3-01-confirmed"
     }
+  ],
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "searchSite",
+    "slotCount",
+    "firstAttemptConflicts",
+    "requeried",
+    "bookingStatus",
+    "bookingReference",
+    "bookingSite",
+    "appointmentSlot",
+    "patientConfirmation"
   ]
 }

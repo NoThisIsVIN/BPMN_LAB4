@@ -5,17 +5,17 @@
     "category": "success",
     "expected": {
       "endEvent": "EndEvent_OrderFulfilled",
-      "route": "Validate \u2192 reserve stock \u2192 total 215.76 \u2192 DMN LOW \u2192 no verification \u2192 payment APPROVED \u2192 fulfilment"
+      "route": "Validate \u2192 primary warehouse reserves \u2192 total \u2192 DMN LOW \u2192 primary provider APPROVED \u2192 primary carrier \u2192 fulfilment"
     },
-    "startedAt": "2026-10-30T17:58:22",
+    "startedAt": "2026-10-30T19:11:47",
     "actions": [],
     "screenshots": [
       "evidence/screenshots/04-operate-instance-L2-01.png",
-      "evidence/screenshots/10-operate-variables.png"
+      "evidence/screenshots/10-operate-variables-L2-01.png"
     ],
-    "processInstanceKey": "2251799813713817",
+    "processInstanceKey": "2251799813728223",
     "final": {
-      "processInstanceKey": "2251799813713817",
+      "processInstanceKey": "2251799813728223",
       "processDefinitionId": "order-fulfilment",
       "state": "COMPLETED",
       "hasIncident": false,
@@ -23,15 +23,19 @@
         "StartEvent_OrderPlaced(COMPLETED)",
         "Task_ValidateOrder(COMPLETED)",
         "Gateway_OrderValid(COMPLETED)",
-        "Task_CheckInventory(COMPLETED)",
-        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
         "Task_CalculateTotal(COMPLETED)",
         "Task_DeterminePriority(COMPLETED)",
         "Gateway_VerificationRequired(COMPLETED)",
         "Gateway_JoinVerified(COMPLETED)",
-        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
         "Gateway_PaymentApproved(COMPLETED)",
-        "Task_CreateShipment(COMPLETED)",
+        "Task_BookPrimaryCarrier(COMPLETED)",
+        "Gateway_JoinShipment(COMPLETED)",
         "Task_NotifyConfirmed(COMPLETED)",
         "EndEvent_OrderFulfilled(COMPLETED)"
       ],
@@ -46,17 +50,27 @@
       "validationErrors": [],
       "customerCategory": "REGULAR",
       "stockStatus": "AVAILABLE",
-      "reservationId": "RES-5AF011CF",
+      "stockSource": "PRIMARY",
+      "warehouse": "WH-CENTRAL",
+      "primaryWarehouseAvailable": 494,
+      "secondaryWarehouseAvailable": null,
+      "reservationId": "RES-8431C437",
       "reservationStatus": "COMMITTED",
       "orderTotal": 215.76,
       "deliveryPriority": "LOW",
       "slaHours": 96,
       "verificationDecision": null,
+      "paymentProvider": "PRIMARY",
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
       "paymentStatus": "APPROVED",
-      "transactionId": "TXN-E371C5F2-EAC",
+      "transactionId": "TXN-3E781E6C-21A",
       "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": "PRIMARY",
+      "carrier": "PRIMARY-CARRIER STANDARD-PARCEL",
       "shipmentId": "SHP-ORD-2001",
-      "trackingNumber": "TRK981B2B934C"
+      "trackingNumber": "TRKEFD16290E5"
     },
     "actualEndEvents": [
       "EndEvent_OrderFulfilled"
@@ -65,20 +79,20 @@
   },
   {
     "id": "L2-02",
-    "title": "Stock insufficient \u2013 order cannot proceed to fulfilment",
+    "title": "Both warehouses short \u2013 order cannot proceed to fulfilment",
     "category": "rejection",
     "expected": {
       "endEvent": "EndEvent_OutOfStock",
-      "route": "Validate \u2192 stock check INSUFFICIENT (5 requested, 2 in stock) \u2192 notify customer \u2192 cancelled"
+      "route": "Validate \u2192 primary warehouse short (2 < 5) \u2192 secondary warehouse short (1 < 5) \u2192 notify \u2192 cancelled"
     },
-    "startedAt": "2026-10-30T17:58:40",
+    "startedAt": "2026-10-30T19:12:10",
     "actions": [],
     "screenshots": [
       "evidence/screenshots/04-operate-instance-L2-02.png"
     ],
-    "processInstanceKey": "2251799813713977",
+    "processInstanceKey": "2251799813728544",
     "final": {
-      "processInstanceKey": "2251799813713977",
+      "processInstanceKey": "2251799813728544",
       "processDefinitionId": "order-fulfilment",
       "state": "COMPLETED",
       "hasIncident": false,
@@ -86,8 +100,10 @@
         "StartEvent_OrderPlaced(COMPLETED)",
         "Task_ValidateOrder(COMPLETED)",
         "Gateway_OrderValid(COMPLETED)",
-        "Task_CheckInventory(COMPLETED)",
-        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Task_CheckSecondaryWarehouse(COMPLETED)",
+        "Gateway_SecondaryStock(COMPLETED)",
         "Task_NotifyOutOfStock(COMPLETED)",
         "EndEvent_OutOfStock(COMPLETED)"
       ],
@@ -102,15 +118,25 @@
       "validationErrors": [],
       "customerCategory": "REGULAR",
       "stockStatus": "INSUFFICIENT",
+      "stockSource": null,
+      "warehouse": null,
+      "primaryWarehouseAvailable": 2,
+      "secondaryWarehouseAvailable": 1,
       "reservationId": null,
       "reservationStatus": null,
       "orderTotal": null,
       "deliveryPriority": null,
       "slaHours": null,
       "verificationDecision": null,
+      "paymentProvider": null,
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
       "paymentStatus": null,
       "transactionId": null,
       "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": null,
+      "carrier": null,
       "shipmentId": null,
       "trackingNumber": null
     },
@@ -121,20 +147,24 @@
   },
   {
     "id": "L2-03",
-    "title": "Payment declined by the mock gateway",
+    "title": "Payment declined, customer does not send a new payment method in time",
     "category": "rejection",
     "expected": {
       "endEvent": "EndEvent_PaymentDeclined",
-      "route": "Validate \u2192 reserve \u2192 total 553.79 \u2192 DMN HIGH \u2192 payment DECLINED (insufficient funds) \u2192 release stock \u2192 notify \u2192 cancelled"
+      "route": "\u2026 \u2192 primary provider DECLINED \u2192 retry allowed \u2192 ask customer \u2192 no reply within paymentRetryTimeout (8 s) \u2192 stock released \u2192 cancelled"
     },
-    "startedAt": "2026-10-30T17:58:51",
-    "actions": [],
-    "screenshots": [
-      "evidence/screenshots/04-operate-instance-L2-03.png"
+    "startedAt": "2026-10-30T19:12:24",
+    "actions": [
+      "Task_WaitForPaymentMethod reached state ACTIVE",
+      "Boundary_NoNewPaymentMethod reached state COMPLETED"
     ],
-    "processInstanceKey": "2251799813714038",
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L2-03-waiting-for-customer.png",
+      "evidence/screenshots/04-operate-instance-L2-03-timer-fired.png"
+    ],
+    "processInstanceKey": "2251799813728797",
     "final": {
-      "processInstanceKey": "2251799813714038",
+      "processInstanceKey": "2251799813728797",
       "processDefinitionId": "order-fulfilment",
       "state": "COMPLETED",
       "hasIncident": false,
@@ -142,14 +172,22 @@
         "StartEvent_OrderPlaced(COMPLETED)",
         "Task_ValidateOrder(COMPLETED)",
         "Gateway_OrderValid(COMPLETED)",
-        "Task_CheckInventory(COMPLETED)",
-        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
         "Task_CalculateTotal(COMPLETED)",
         "Task_DeterminePriority(COMPLETED)",
         "Gateway_VerificationRequired(COMPLETED)",
         "Gateway_JoinVerified(COMPLETED)",
-        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
         "Gateway_PaymentApproved(COMPLETED)",
+        "Gateway_RetryAllowed(COMPLETED)",
+        "Task_AskNewPaymentMethod(COMPLETED)",
+        "Task_WaitForPaymentMethod(TERMINATED)",
+        "Boundary_NoNewPaymentMethod(COMPLETED)",
+        "Gateway_JoinCancelPayment(COMPLETED)",
         "Task_ReleaseStockPayment(COMPLETED)",
         "Task_NotifyPaymentDeclined(COMPLETED)",
         "EndEvent_PaymentDeclined(COMPLETED)"
@@ -165,15 +203,25 @@
       "validationErrors": [],
       "customerCategory": "REGULAR",
       "stockStatus": "AVAILABLE",
-      "reservationId": "RES-1AF2BAEE",
+      "stockSource": "PRIMARY",
+      "warehouse": "WH-CENTRAL",
+      "primaryWarehouseAvailable": 199,
+      "secondaryWarehouseAvailable": null,
+      "reservationId": "RES-D8F26073",
       "reservationStatus": "RELEASED",
       "orderTotal": 553.79,
       "deliveryPriority": "HIGH",
       "slaHours": 24,
       "verificationDecision": null,
+      "paymentProvider": "PRIMARY",
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
       "paymentStatus": "DECLINED",
-      "transactionId": "TXN-CA6885C2-CFA",
+      "transactionId": "TXN-3478A731-8F3",
       "declineReason": "Insufficient funds",
+      "paymentAttempts": 2,
+      "carrierUsed": null,
+      "carrier": null,
       "shipmentId": null,
       "trackingNumber": null
     },
@@ -184,13 +232,13 @@
   },
   {
     "id": "L2-04",
-    "title": "High-value order routed to manual verification \u2013 reviewer approves",
+    "title": "High-value order routed to manual verification \u2013 reviewer approves in Tasklist",
     "category": "manual-review",
     "expected": {
       "endEvent": "EndEvent_OrderFulfilled",
       "route": "Validate \u2192 reserve \u2192 total 2080.91 (\u2265 2000) \u2192 DMN CRITICAL \u2192 reviewer APPROVES \u2192 payment APPROVED \u2192 fulfilment"
     },
-    "startedAt": "2026-10-30T17:59:02",
+    "startedAt": "2026-10-30T19:12:48",
     "actions": [
       "completed user task Task_VerifyOrder in the Tasklist UI with {'radio': 'Approve \u2013 proceed to payment', 'textarea': 'VIP customer, order history checked - OK to charge.'}"
     ],
@@ -200,9 +248,9 @@
       "evidence/screenshots/06-tasklist-task-form-completed.png",
       "evidence/screenshots/04-operate-instance-L2-04.png"
     ],
-    "processInstanceKey": "2251799813714167",
+    "processInstanceKey": "2251799813729118",
     "final": {
-      "processInstanceKey": "2251799813714167",
+      "processInstanceKey": "2251799813729118",
       "processDefinitionId": "order-fulfilment",
       "state": "COMPLETED",
       "hasIncident": false,
@@ -210,17 +258,21 @@
         "StartEvent_OrderPlaced(COMPLETED)",
         "Task_ValidateOrder(COMPLETED)",
         "Gateway_OrderValid(COMPLETED)",
-        "Task_CheckInventory(COMPLETED)",
-        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
         "Task_CalculateTotal(COMPLETED)",
         "Task_DeterminePriority(COMPLETED)",
         "Gateway_VerificationRequired(COMPLETED)",
         "Task_VerifyOrder(COMPLETED)",
         "Gateway_OrderVerified(COMPLETED)",
         "Gateway_JoinVerified(COMPLETED)",
-        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
         "Gateway_PaymentApproved(COMPLETED)",
-        "Task_CreateShipment(COMPLETED)",
+        "Task_BookPrimaryCarrier(COMPLETED)",
+        "Gateway_JoinShipment(COMPLETED)",
         "Task_NotifyConfirmed(COMPLETED)",
         "EndEvent_OrderFulfilled(COMPLETED)"
       ],
@@ -235,17 +287,27 @@
       "validationErrors": [],
       "customerCategory": "VIP",
       "stockStatus": "AVAILABLE",
-      "reservationId": "RES-515A4504",
+      "stockSource": "PRIMARY",
+      "warehouse": "WH-CENTRAL",
+      "primaryWarehouseAvailable": 99,
+      "secondaryWarehouseAvailable": null,
+      "reservationId": "RES-D15E0692",
       "reservationStatus": "COMMITTED",
       "orderTotal": 2080.91,
       "deliveryPriority": "CRITICAL",
       "slaHours": 8,
       "verificationDecision": "APPROVED",
+      "paymentProvider": "PRIMARY",
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
       "paymentStatus": "APPROVED",
-      "transactionId": "TXN-A069CDFC-0EC",
+      "transactionId": "TXN-5C7D4FF2-704",
       "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": "PRIMARY",
+      "carrier": "PRIMARY-CARRIER COURIER-SAME-DAY",
       "shipmentId": "SHP-ORD-2004",
-      "trackingNumber": "TRK51931003EE"
+      "trackingNumber": "TRK11D88EB49F"
     },
     "actualEndEvents": [
       "EndEvent_OrderFulfilled"
@@ -258,18 +320,18 @@
     "category": "manual-review",
     "expected": {
       "endEvent": "EndEvent_CancelledByReviewer",
-      "route": "Validate \u2192 reserve \u2192 total 1077.60 (NEW \u2265 1000) \u2192 DMN NORMAL \u2192 reviewer REJECTS \u2192 release stock \u2192 notify \u2192 cancelled"
+      "route": "Validate \u2192 reserve \u2192 NEW customer, total \u2265 1000 \u2192 reviewer REJECTS \u2192 stock released \u2192 cancelled"
     },
-    "startedAt": "2026-10-30T17:59:36",
+    "startedAt": "2026-10-30T19:13:27",
     "actions": [
-      "completed user task Task_VerifyOrder via REST API with {'verificationDecision': 'REJECTED', 'verificationComment': 'New account, unusually large first order - cannot verify identity.'}"
+      "completed user task Task_VerifyOrder via REST API with {'verificationDecision': 'REJECTED', 'verificationComment': 'First order, high value, delivery address unverified.'}"
     ],
     "screenshots": [
       "evidence/screenshots/04-operate-instance-L2-05.png"
     ],
-    "processInstanceKey": "2251799813714379",
+    "processInstanceKey": "2251799813730004",
     "final": {
-      "processInstanceKey": "2251799813714379",
+      "processInstanceKey": "2251799813730004",
       "processDefinitionId": "order-fulfilment",
       "state": "COMPLETED",
       "hasIncident": false,
@@ -277,8 +339,9 @@
         "StartEvent_OrderPlaced(COMPLETED)",
         "Task_ValidateOrder(COMPLETED)",
         "Gateway_OrderValid(COMPLETED)",
-        "Task_CheckInventory(COMPLETED)",
-        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
         "Task_CalculateTotal(COMPLETED)",
         "Task_DeterminePriority(COMPLETED)",
         "Gateway_VerificationRequired(COMPLETED)",
@@ -299,15 +362,25 @@
       "validationErrors": [],
       "customerCategory": "NEW",
       "stockStatus": "AVAILABLE",
-      "reservationId": "RES-8368A68A",
+      "stockSource": "PRIMARY",
+      "warehouse": "WH-CENTRAL",
+      "primaryWarehouseAvailable": 199,
+      "secondaryWarehouseAvailable": null,
+      "reservationId": "RES-9050C366",
       "reservationStatus": "RELEASED",
       "orderTotal": 1077.6,
       "deliveryPriority": "NORMAL",
       "slaHours": 48,
       "verificationDecision": "REJECTED",
+      "paymentProvider": null,
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
       "paymentStatus": null,
       "transactionId": null,
       "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": null,
+      "carrier": null,
       "shipmentId": null,
       "trackingNumber": null
     },
@@ -322,14 +395,14 @@
     "category": "validation",
     "expected": {
       "endEvent": "EndEvent_OrderRejected",
-      "route": "Validate \u2192 orderValid=false (unknown product) \u2192 notify customer \u2192 rejected"
+      "route": "Validate \u2192 orderValid = false \u2192 notify \u2192 rejected"
     },
-    "startedAt": "2026-10-30T17:59:48",
+    "startedAt": "2026-10-30T19:13:42",
     "actions": [],
     "screenshots": [],
-    "processInstanceKey": "2251799813714504",
+    "processInstanceKey": "2251799813730422",
     "final": {
-      "processInstanceKey": "2251799813714504",
+      "processInstanceKey": "2251799813730422",
       "processDefinitionId": "order-fulfilment",
       "state": "COMPLETED",
       "hasIncident": false,
@@ -353,15 +426,25 @@
       ],
       "customerCategory": "REGULAR",
       "stockStatus": null,
+      "stockSource": null,
+      "warehouse": null,
+      "primaryWarehouseAvailable": null,
+      "secondaryWarehouseAvailable": null,
       "reservationId": null,
       "reservationStatus": null,
       "orderTotal": null,
       "deliveryPriority": null,
       "slaHours": null,
       "verificationDecision": null,
+      "paymentProvider": null,
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
       "paymentStatus": null,
       "transactionId": null,
       "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": null,
+      "carrier": null,
       "shipmentId": null,
       "trackingNumber": null
     },
@@ -372,33 +455,35 @@
   },
   {
     "id": "L2-07",
-    "title": "Payment gateway outage \u2192 incident \u2192 gateway restored \u2192 retry \u2192 fulfilled",
+    "title": "Both payment providers down \u2192 incident \u2192 backup provider restored \u2192 retry \u2192 fulfilled",
     "category": "failure-recovery",
     "expected": {
       "endEvent": "EndEvent_OrderFulfilled",
-      "route": "\u2026 \u2192 Process payment fails (HTTP 503) 3\u00d7 \u2192 incident \u2192 fault off \u2192 retry job \u2192 APPROVED \u2192 fulfilment"
+      "route": "\u2026 \u2192 primary provider 503 \u2192 BPMN error \u2192 backup provider 503 \u00d73 (5 s back-off) \u2192 INCIDENT \u2192 backup restored \u2192 retry \u2192 APPROVED \u2192 fulfilment"
     },
-    "startedAt": "2026-10-30T17:59:55",
+    "startedAt": "2026-10-30T19:13:47",
     "actions": [
-      "fault payment-gateway-down -> True (before start)",
-      "incident raised at Task_ProcessPayment: JOB_NO_RETRIES - | Error variables: {error={code=503, variables={response={headers={Transfer-Encoding=chunked, Connection=close, Date=Fri, 30 Oct 2026 12:30:09 GMT, Content-Type=application/json}, body={error=Payment gateway temporarily unavailable, status=503}}}, message=, type=io.camunda.connector.api.error.ConnectorException}}",
-      "fault payment-gateway-down -> False",
-      "retried job 2251799813714618 and resolved incident 2251799813714669"
+      "fault primary-payment-down -> True (before start)",
+      "fault backup-payment-down -> True (before start)",
+      "incident raised at Task_ChargeBackup: JOB_NO_RETRIES - | Error variables: {error={message=, variables={response={headers={Transfer-Encoding=chunked, Connection=close, Date=Fri, 30 Oct 2026 13:44:03 GMT, Content-Type=application/json}, body={error=Backup payment provider temporarily unavailable, status=503}}}, code=503, type=io.camunda.connector.api.error.ConnectorException}}",
+      "fault backup-payment-down -> False",
+      "fault primary-payment-down -> False",
+      "retried job 2251799813730706 and resolved incident 2251799813730946"
     ],
     "screenshots": [
-      "evidence/screenshots/07-operate-incident.png",
-      "evidence/screenshots/08-operate-incident-detail.png",
-      "evidence/screenshots/09-operate-recovered.png"
+      "evidence/screenshots/07-operate-incident-L2-07.png",
+      "evidence/screenshots/08-operate-incident-detail-L2-07.png",
+      "evidence/screenshots/09-operate-recovered-L2-07.png"
     ],
-    "processInstanceKey": "2251799813714551",
+    "processInstanceKey": "2251799813730612",
     "incident": {
-      "key": "2251799813714669",
-      "element": "Task_ProcessPayment",
+      "key": "2251799813730946",
+      "element": "Task_ChargeBackup",
       "type": "JOB_NO_RETRIES",
-      "message": "| Error variables: {error={code=503, variables={response={headers={Transfer-Encoding=chunked, Connection=close, Date=Fri, 30 Oct 2026 12:30:09 GMT, Content-Type=application/json}, body={error=Payment gateway temporarily unavailable, status=503}}}, message=, type=io.camunda.connector.api.error.ConnectorException}}"
+      "message": "| Error variables: {error={message=, variables={response={headers={Transfer-Encoding=chunked, Connection=close, Date=Fri, 30 Oct 2026 13:44:03 GMT, Content-Type=application/json}, body={error=Backup payment provider temporarily unavailable, status=503}}}, code=503, type=io.camunda.connector.api.error.ConnectorException}}"
     },
     "final": {
-      "processInstanceKey": "2251799813714551",
+      "processInstanceKey": "2251799813730612",
       "processDefinitionId": "order-fulfilment",
       "state": "COMPLETED",
       "hasIncident": false,
@@ -406,15 +491,21 @@
         "StartEvent_OrderPlaced(COMPLETED)",
         "Task_ValidateOrder(COMPLETED)",
         "Gateway_OrderValid(COMPLETED)",
-        "Task_CheckInventory(COMPLETED)",
-        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
         "Task_CalculateTotal(COMPLETED)",
         "Task_DeterminePriority(COMPLETED)",
         "Gateway_VerificationRequired(COMPLETED)",
         "Gateway_JoinVerified(COMPLETED)",
-        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(TERMINATED)",
+        "Boundary_PrimaryProviderDown(COMPLETED)",
+        "Task_ChargeBackup(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
         "Gateway_PaymentApproved(COMPLETED)",
-        "Task_CreateShipment(COMPLETED)",
+        "Task_BookPrimaryCarrier(COMPLETED)",
+        "Gateway_JoinShipment(COMPLETED)",
         "Task_NotifyConfirmed(COMPLETED)",
         "EndEvent_OrderFulfilled(COMPLETED)"
       ],
@@ -429,17 +520,27 @@
       "validationErrors": [],
       "customerCategory": "REGULAR",
       "stockStatus": "AVAILABLE",
-      "reservationId": "RES-52A73716",
+      "stockSource": "PRIMARY",
+      "warehouse": "WH-CENTRAL",
+      "primaryWarehouseAvailable": 148,
+      "secondaryWarehouseAvailable": null,
+      "reservationId": "RES-77AD2204",
       "reservationStatus": "COMMITTED",
       "orderTotal": 409.79,
       "deliveryPriority": "HIGH",
       "slaHours": 24,
       "verificationDecision": null,
+      "paymentProvider": "BACKUP",
+      "paymentFallbackUsed": true,
+      "primaryPaymentError": "HTTP 503: Primary payment provider temporarily unavailable",
       "paymentStatus": "APPROVED",
-      "transactionId": "TXN-4D9C5499-D3F",
+      "transactionId": "TXN-551A9820-828",
       "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": "PRIMARY",
+      "carrier": "PRIMARY-CARRIER EXPRESS-PARCEL",
       "shipmentId": "SHP-ORD-2007",
-      "trackingNumber": "TRKE658AC8EAF"
+      "trackingNumber": "TRK52774615AA"
     },
     "actualEndEvents": [
       "EndEvent_OrderFulfilled"
@@ -452,28 +553,29 @@
     "category": "failure-recovery",
     "expected": {
       "endEvent": "EndEvent_OrderFulfilled",
-      "route": "Validate \u2192 Check inventory fails 3\u00d7 (5 s back-off) \u2192 incident \u2192 fault off \u2192 retry job \u2192 reserve \u2192 \u2026 \u2192 fulfilment"
+      "route": "Validate \u2192 inventory service 503 \u00d73 (5 s back-off) \u2192 INCIDENT \u2192 service restored \u2192 retry \u2192 reserved \u2192 fulfilment"
     },
-    "startedAt": "2026-10-30T18:00:39",
+    "startedAt": "2026-10-30T19:14:35",
     "actions": [
       "fault inventory-service-down -> True (before start)",
-      "incident raised at Task_CheckInventory: JOB_NO_RETRIES - Inventory service unavailable (HTTP 503 from inventory-api). Fix: restore the service (POST /admin/faults/inventory-service-down?enabled=false) and retry.",
+      "incident raised at Task_CheckPrimaryWarehouse: JOB_NO_RETRIES - Inventory service unavailable (HTTP 503 from inventory-api). Fix: restore the service (POST /admin/faults/inventory-service-down?enabled=false) and retry.",
       "fault inventory-service-down -> False",
-      "retried job 2251799813714812 and resolved incident 2251799813714849"
+      "retried job 2251799813731358 and resolved incident 2251799813731416"
     ],
     "screenshots": [
-      "evidence/screenshots/07-operate-incident-inventory.png",
-      "evidence/screenshots/09-operate-recovered-inventory.png"
+      "evidence/screenshots/07-operate-incident-L2-08.png",
+      "evidence/screenshots/08-operate-incident-detail-L2-08.png",
+      "evidence/screenshots/09-operate-recovered-L2-08.png"
     ],
-    "processInstanceKey": "2251799813714788",
+    "processInstanceKey": "2251799813731331",
     "incident": {
-      "key": "2251799813714849",
-      "element": "Task_CheckInventory",
+      "key": "2251799813731416",
+      "element": "Task_CheckPrimaryWarehouse",
       "type": "JOB_NO_RETRIES",
       "message": "Inventory service unavailable (HTTP 503 from inventory-api). Fix: restore the service (POST /admin/faults/inventory-service-down?enabled=false) and retry."
     },
     "final": {
-      "processInstanceKey": "2251799813714788",
+      "processInstanceKey": "2251799813731331",
       "processDefinitionId": "order-fulfilment",
       "state": "COMPLETED",
       "hasIncident": false,
@@ -481,15 +583,19 @@
         "StartEvent_OrderPlaced(COMPLETED)",
         "Task_ValidateOrder(COMPLETED)",
         "Gateway_OrderValid(COMPLETED)",
-        "Task_CheckInventory(COMPLETED)",
-        "Gateway_StockAvailable(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
         "Task_CalculateTotal(COMPLETED)",
         "Task_DeterminePriority(COMPLETED)",
         "Gateway_VerificationRequired(COMPLETED)",
         "Gateway_JoinVerified(COMPLETED)",
-        "Task_ProcessPayment(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
         "Gateway_PaymentApproved(COMPLETED)",
-        "Task_CreateShipment(COMPLETED)",
+        "Task_BookPrimaryCarrier(COMPLETED)",
+        "Gateway_JoinShipment(COMPLETED)",
         "Task_NotifyConfirmed(COMPLETED)",
         "EndEvent_OrderFulfilled(COMPLETED)"
       ],
@@ -504,17 +610,356 @@
       "validationErrors": [],
       "customerCategory": "VIP",
       "stockStatus": "AVAILABLE",
-      "reservationId": "RES-5197B1CB",
+      "stockSource": "PRIMARY",
+      "warehouse": "WH-CENTRAL",
+      "primaryWarehouseAvailable": 492,
+      "secondaryWarehouseAvailable": null,
+      "reservationId": "RES-AA73E5A5",
       "reservationStatus": "COMMITTED",
       "orderTotal": 291.28,
       "deliveryPriority": "HIGH",
       "slaHours": 24,
       "verificationDecision": null,
+      "paymentProvider": "PRIMARY",
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
       "paymentStatus": "APPROVED",
-      "transactionId": "TXN-47A195C1-F18",
+      "transactionId": "TXN-09A44A79-BBE",
       "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": "PRIMARY",
+      "carrier": "PRIMARY-CARRIER EXPRESS-PARCEL",
       "shipmentId": "SHP-ORD-2008",
-      "trackingNumber": "TRK9EB0257292"
+      "trackingNumber": "TRK2DB75769E2"
+    },
+    "actualEndEvents": [
+      "EndEvent_OrderFulfilled"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-09",
+    "title": "Primary payment provider down \u2192 backup provider charges \u2192 fulfilled",
+    "category": "fallback",
+    "expected": {
+      "endEvent": "EndEvent_OrderFulfilled",
+      "route": "\u2026 \u2192 primary provider 503 \u2192 BPMN error PAYMENT_PROVIDER_DOWN \u2192 backup provider APPROVED \u2192 fulfilment"
+    },
+    "startedAt": "2026-10-30T19:15:19",
+    "actions": [
+      "fault primary-payment-down -> True (before start)",
+      "fault primary-payment-down -> False"
+    ],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L2-09-backup-provider.png"
+    ],
+    "processInstanceKey": "2251799813731946",
+    "final": {
+      "processInstanceKey": "2251799813731946",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Gateway_JoinVerified(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(TERMINATED)",
+        "Boundary_PrimaryProviderDown(COMPLETED)",
+        "Task_ChargeBackup(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Task_BookPrimaryCarrier(COMPLETED)",
+        "Gateway_JoinShipment(COMPLETED)",
+        "Task_NotifyConfirmed(COMPLETED)",
+        "EndEvent_OrderFulfilled(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OrderFulfilled"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "REGULAR",
+      "stockStatus": "AVAILABLE",
+      "stockSource": "PRIMARY",
+      "warehouse": "WH-CENTRAL",
+      "primaryWarehouseAvailable": 199,
+      "secondaryWarehouseAvailable": null,
+      "reservationId": "RES-66B0CD1E",
+      "reservationStatus": "COMMITTED",
+      "orderTotal": 538.8,
+      "deliveryPriority": "NORMAL",
+      "slaHours": 48,
+      "verificationDecision": null,
+      "paymentProvider": "BACKUP",
+      "paymentFallbackUsed": true,
+      "primaryPaymentError": "HTTP 503: Primary payment provider temporarily unavailable",
+      "paymentStatus": "APPROVED",
+      "transactionId": "TXN-99D4576D-B11",
+      "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": "PRIMARY",
+      "carrier": "PRIMARY-CARRIER STANDARD-PARCEL",
+      "shipmentId": "SHP-ORD-2009",
+      "trackingNumber": "TRK108C12A663"
+    },
+    "actualEndEvents": [
+      "EndEvent_OrderFulfilled"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-10",
+    "title": "Primary warehouse sold out \u2192 secondary warehouse reserves \u2192 fulfilled",
+    "category": "fallback",
+    "expected": {
+      "endEvent": "EndEvent_OrderFulfilled",
+      "route": "Validate \u2192 primary warehouse short (0) \u2192 secondary warehouse reserves \u2192 \u2026 \u2192 fulfilment"
+    },
+    "startedAt": "2026-10-30T19:15:34",
+    "actions": [],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L2-10-secondary-warehouse.png"
+    ],
+    "processInstanceKey": "2251799813732365",
+    "final": {
+      "processInstanceKey": "2251799813732365",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Task_CheckSecondaryWarehouse(COMPLETED)",
+        "Gateway_SecondaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Gateway_JoinVerified(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Task_BookPrimaryCarrier(COMPLETED)",
+        "Gateway_JoinShipment(COMPLETED)",
+        "Task_NotifyConfirmed(COMPLETED)",
+        "EndEvent_OrderFulfilled(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OrderFulfilled"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "REGULAR",
+      "stockStatus": "AVAILABLE",
+      "stockSource": "SECONDARY",
+      "warehouse": "WH-REGIONAL",
+      "primaryWarehouseAvailable": 0,
+      "secondaryWarehouseAvailable": 39,
+      "reservationId": "RES-52F4CEEA",
+      "reservationStatus": "COMMITTED",
+      "orderTotal": 658.8,
+      "deliveryPriority": "NORMAL",
+      "slaHours": 48,
+      "verificationDecision": null,
+      "paymentProvider": "PRIMARY",
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
+      "paymentStatus": "APPROVED",
+      "transactionId": "TXN-66F1E677-E03",
+      "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": "PRIMARY",
+      "carrier": "PRIMARY-CARRIER STANDARD-PARCEL",
+      "shipmentId": "SHP-ORD-2010",
+      "trackingNumber": "TRKCDBB3030AD"
+    },
+    "actualEndEvents": [
+      "EndEvent_OrderFulfilled"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-11",
+    "title": "Card declined \u2192 customer sends a new payment method \u2192 paid \u2192 fulfilled",
+    "category": "fallback",
+    "expected": {
+      "endEvent": "EndEvent_OrderFulfilled",
+      "route": "\u2026 \u2192 primary provider DECLINED \u2192 ask customer \u2192 message payment-method-updated (new token) \u2192 loop back \u2192 APPROVED \u2192 fulfilment"
+    },
+    "startedAt": "2026-10-30T19:15:50",
+    "actions": [
+      "published message 'payment-method-updated' (key ORD-2011) with {'paymentToken': 'tok_test_approve'}"
+    ],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L2-11-new-payment-method.png"
+    ],
+    "processInstanceKey": "2251799813732708",
+    "final": {
+      "processInstanceKey": "2251799813732708",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Gateway_JoinVerified(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Gateway_RetryAllowed(COMPLETED)",
+        "Task_AskNewPaymentMethod(COMPLETED)",
+        "Task_WaitForPaymentMethod(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Task_BookPrimaryCarrier(COMPLETED)",
+        "Gateway_JoinShipment(COMPLETED)",
+        "Task_NotifyConfirmed(COMPLETED)",
+        "EndEvent_OrderFulfilled(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OrderFulfilled"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "REGULAR",
+      "stockStatus": "AVAILABLE",
+      "stockSource": "PRIMARY",
+      "warehouse": "WH-CENTRAL",
+      "primaryWarehouseAvailable": 147,
+      "secondaryWarehouseAvailable": null,
+      "reservationId": "RES-82DAADFC",
+      "reservationStatus": "COMMITTED",
+      "orderTotal": 409.79,
+      "deliveryPriority": "HIGH",
+      "slaHours": 24,
+      "verificationDecision": null,
+      "paymentProvider": "PRIMARY",
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
+      "paymentStatus": "APPROVED",
+      "transactionId": "TXN-974E7649-BB7",
+      "declineReason": null,
+      "paymentAttempts": 2,
+      "carrierUsed": "PRIMARY",
+      "carrier": "PRIMARY-CARRIER EXPRESS-PARCEL",
+      "shipmentId": "SHP-ORD-2011",
+      "trackingNumber": "TRKBAFB2E76FD"
+    },
+    "actualEndEvents": [
+      "EndEvent_OrderFulfilled"
+    ],
+    "status": "PASS"
+  },
+  {
+    "id": "L2-12",
+    "title": "Primary carrier booking API down \u2192 backup carrier \u2192 fulfilled",
+    "category": "fallback",
+    "expected": {
+      "endEvent": "EndEvent_OrderFulfilled",
+      "route": "\u2026 \u2192 payment APPROVED \u2192 primary carrier BPMN error CARRIER_UNAVAILABLE \u2192 backup carrier \u2192 fulfilment"
+    },
+    "startedAt": "2026-10-30T19:16:08",
+    "actions": [
+      "fault primary-carrier-down -> True (before start)",
+      "fault primary-carrier-down -> False"
+    ],
+    "screenshots": [
+      "evidence/screenshots/04-operate-instance-L2-12-backup-carrier.png"
+    ],
+    "processInstanceKey": "2251799813732995",
+    "final": {
+      "processInstanceKey": "2251799813732995",
+      "processDefinitionId": "order-fulfilment",
+      "state": "COMPLETED",
+      "hasIncident": false,
+      "path": [
+        "StartEvent_OrderPlaced(COMPLETED)",
+        "Task_ValidateOrder(COMPLETED)",
+        "Gateway_OrderValid(COMPLETED)",
+        "Task_CheckPrimaryWarehouse(COMPLETED)",
+        "Gateway_PrimaryStock(COMPLETED)",
+        "Gateway_JoinStock(COMPLETED)",
+        "Task_CalculateTotal(COMPLETED)",
+        "Task_DeterminePriority(COMPLETED)",
+        "Gateway_VerificationRequired(COMPLETED)",
+        "Gateway_JoinVerified(COMPLETED)",
+        "Gateway_JoinPaymentAttempt(COMPLETED)",
+        "Task_ChargePrimary(COMPLETED)",
+        "Gateway_JoinPaymentResult(COMPLETED)",
+        "Gateway_PaymentApproved(COMPLETED)",
+        "Task_BookPrimaryCarrier(TERMINATED)",
+        "Boundary_CarrierUnavailable(COMPLETED)",
+        "Task_BookBackupCarrier(COMPLETED)",
+        "Gateway_JoinShipment(COMPLETED)",
+        "Task_NotifyConfirmed(COMPLETED)",
+        "EndEvent_OrderFulfilled(COMPLETED)"
+      ],
+      "endEvents": [
+        "EndEvent_OrderFulfilled"
+      ],
+      "openUserTasks": [],
+      "incidents": []
+    },
+    "keyVariables": {
+      "orderValid": true,
+      "validationErrors": [],
+      "customerCategory": "VIP",
+      "stockStatus": "AVAILABLE",
+      "stockSource": "PRIMARY",
+      "warehouse": "WH-CENTRAL",
+      "primaryWarehouseAvailable": 489,
+      "secondaryWarehouseAvailable": null,
+      "reservationId": "RES-4AF3F190",
+      "reservationStatus": "COMMITTED",
+      "orderTotal": 112.08,
+      "deliveryPriority": "CRITICAL",
+      "slaHours": 12,
+      "verificationDecision": null,
+      "paymentProvider": "PRIMARY",
+      "paymentFallbackUsed": null,
+      "primaryPaymentError": null,
+      "paymentStatus": "APPROVED",
+      "transactionId": "TXN-57120A57-8A3",
+      "declineReason": null,
+      "paymentAttempts": 1,
+      "carrierUsed": "BACKUP",
+      "carrier": "BACKUP-CARRIER PRIORITY",
+      "shipmentId": "SHP-ORD-2012",
+      "trackingNumber": "BKPC761AE5588"
     },
     "actualEndEvents": [
       "EndEvent_OrderFulfilled"

@@ -1,0 +1,89 @@
+{
+  "id": "L1-10",
+  "title": "Non-numeric income -> incident -> variable corrected in place -> retried -> disbursed",
+  "category": "failure-recovery",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanDisbursed",
+    "route": "monthlyIncome=\"five thousand\" -> INCIDENT (retries 0) -> variable set to 6800 -> retry -> approved -> disbursed"
+  },
+  "variables": {
+    "applicationId": "LA-10-${RUN}",
+    "applicantId": "APP-1008",
+    "fullName": "Synthetic Applicant Juliett",
+    "email": "synthetic.applicant.juliett@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": "five thousand",
+    "monthlyDebtPayments": 250,
+    "loanAmount": 24000,
+    "loanTermMonths": 60,
+    "loanPurpose": "Home renovation"
+  },
+  "steps": [
+    {
+      "do": "expectIncident",
+      "elementId": "Task_ValidateApplicant"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-incident",
+      "name": "08-operate-incident-detail-L1-10-malformed-variable"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-incident-message",
+      "name": "08-operate-incident-message-L1-10"
+    },
+    {
+      "do": "setVars",
+      "variables": {
+        "monthlyIncome": 6800
+      }
+    },
+    {
+      "do": "retryIncident"
+    },
+    {
+      "do": "publishMessage",
+      "name": "loan-offer-response",
+      "correlationKey": "LA-10-${RUN}",
+      "waitForElement": "Task_WaitForOfferResponse",
+      "variables": {
+        "offerAccepted": true
+      }
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "09-operate-recovered-L1-10"
+    }
+  ],
+  "reportVariables": [
+    "applicationComplete",
+    "applicantEligible",
+    "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
+    "creditCheckStatus",
+    "creditBureauUsed",
+    "creditScore",
+    "creditRiskBand",
+    "primaryBureauError",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference"
+  ]
+}

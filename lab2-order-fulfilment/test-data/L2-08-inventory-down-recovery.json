@@ -6,7 +6,7 @@
   "app": "http://localhost:8082",
   "expected": {
     "endEvent": "EndEvent_OrderFulfilled",
-    "route": "Validate → Check inventory fails 3× (5 s back-off) → incident → fault off → retry job → reserve → … → fulfilment"
+    "route": "Validate → inventory service 503 ×3 (5 s back-off) → INCIDENT → service restored → retry → reserved → fulfilment"
   },
   "variables": {
     "orderId": "ORD-2008",
@@ -25,13 +25,17 @@
     },
     {
       "do": "expectIncident",
-      "elementId": "Task_CheckInventory",
-      "timeout": 120
+      "elementId": "Task_CheckPrimaryWarehouse"
     },
     {
       "do": "screenshot",
       "view": "operate-instance",
-      "name": "07-operate-incident-inventory"
+      "name": "07-operate-incident-L2-08"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-incident",
+      "name": "08-operate-incident-detail-L2-08"
     },
     {
       "do": "fault",
@@ -47,7 +51,7 @@
     {
       "do": "screenshot",
       "view": "operate-instance",
-      "name": "09-operate-recovered-inventory"
+      "name": "09-operate-recovered-L2-08"
     }
   ],
   "reportVariables": [
@@ -55,15 +59,25 @@
     "validationErrors",
     "customerCategory",
     "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
     "reservationId",
     "reservationStatus",
     "orderTotal",
     "deliveryPriority",
     "slaHours",
     "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
     "paymentStatus",
     "transactionId",
     "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
     "shipmentId",
     "trackingNumber"
   ]

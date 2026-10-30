@@ -1,0 +1,99 @@
+{
+  "id": "L1-09",
+  "title": "Validation worker dependency down -> incident -> repaired -> retried -> disbursed",
+  "category": "failure-recovery",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanDisbursed",
+    "route": "Validate fails 3x (5 s back-off) -> INCIDENT -> fault switched off -> job retried -> approved -> disbursed"
+  },
+  "variables": {
+    "applicationId": "LA-09-${RUN}",
+    "applicantId": "APP-1005",
+    "fullName": "Synthetic Applicant India",
+    "email": "synthetic.applicant.india@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 7000,
+    "monthlyDebtPayments": 200,
+    "loanAmount": 20000,
+    "loanTermMonths": 48,
+    "loanPurpose": "Home renovation"
+  },
+  "steps": [
+    {
+      "do": "fault",
+      "name": "validation-reference-data",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "expectIncident",
+      "elementId": "Task_ValidateApplicant"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "07-operate-incident-L1-09"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-incident",
+      "name": "08-operate-incident-detail-L1-09"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-incident-message",
+      "name": "08-operate-incident-message-L1-09"
+    },
+    {
+      "do": "fault",
+      "name": "validation-reference-data",
+      "enabled": false
+    },
+    {
+      "do": "retryIncident"
+    },
+    {
+      "do": "publishMessage",
+      "name": "loan-offer-response",
+      "correlationKey": "LA-09-${RUN}",
+      "waitForElement": "Task_WaitForOfferResponse",
+      "variables": {
+        "offerAccepted": true
+      }
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "09-operate-recovered-L1-09"
+    }
+  ],
+  "reportVariables": [
+    "applicationComplete",
+    "applicantEligible",
+    "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
+    "creditCheckStatus",
+    "creditBureauUsed",
+    "creditScore",
+    "creditRiskBand",
+    "primaryBureauError",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "id": "L2-12",
+  "title": "Primary carrier booking API down → backup carrier → fulfilled",
+  "category": "fallback",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OrderFulfilled",
+    "route": "… → payment APPROVED → primary carrier BPMN error CARRIER_UNAVAILABLE → backup carrier → fulfilment"
+  },
+  "variables": {
+    "orderId": "ORD-2012",
+    "customerReference": "CUST-0002",
+    "productId": "PRD-1001",
+    "quantity": 1,
+    "deliveryPreference": "EXPRESS",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "fault",
+      "name": "primary-carrier-down",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "fault",
+      "name": "primary-carrier-down",
+      "enabled": false
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L2-12-backup-carrier"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

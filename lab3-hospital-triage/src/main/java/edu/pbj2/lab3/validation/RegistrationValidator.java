@@ -1,5 +1,6 @@
 package edu.pbj2.lab3.validation;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -16,11 +17,19 @@ import java.util.regex.Pattern;
 public class RegistrationValidator {
 
   public static final Set<String> DEPARTMENTS =
-      Set.of("GENERAL_PRACTICE", "CARDIOLOGY", "ORTHOPAEDICS", "RESPIRATORY", "DERMATOLOGY");
+      Set.of("GENERAL_PRACTICE", "CARDIOLOGY", "ORTHOPAEDICS", "RESPIRATORY", "NEUROLOGY", "DERMATOLOGY");
   static final Set<String> TIMES_OF_DAY = Set.of("MORNING", "AFTERNOON", "ANY");
   private static final Pattern PATIENT_REFERENCE = Pattern.compile("^SYN-P-\\d{4}$");
   private static final List<String> URGENCY_FLAGS =
       List.of("chestPain", "breathingDifficulty", "highFever", "chronicCondition");
+  /**
+   * Durations of the process timers (ISO-8601). The BPMN timers read these variables, so a test can start an
+   * instance with e.g. {@code "confirmationTimeout": "PT10S"}; otherwise these business defaults apply.
+   */
+  public static final Map<String, String> TIMER_DEFAULTS = Map.of(
+      "urgentEscalationAfter", "PT15M",
+      "confirmationReminderAfter", "PT12H",
+      "confirmationTimeout", "PT24H");
 
   /** @return process variables to merge into the instance */
   public Map<String, Object> validate(Map<String, Object> v) {
@@ -99,6 +108,20 @@ public class RegistrationValidator {
         }
       }
     }
+
+    TIMER_DEFAULTS.forEach((name, fallback) -> {
+      Object value = v.get(name);
+      if (value == null || value.toString().isBlank()) {
+        out.put(name, fallback);
+        return;
+      }
+      try {
+        Duration.parse(value.toString());
+        out.put(name, value.toString());
+      } catch (DateTimeParseException e) {
+        errors.add(name + " must be an ISO-8601 duration such as PT15M");
+      }
+    });
 
     out.put("registrationValid", errors.isEmpty());
     out.put("registrationErrors", errors);

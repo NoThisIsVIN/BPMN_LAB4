@@ -1,6 +1,6 @@
 # DMN `triage-category` – sample evaluations
 
-Real results from the deployed decision, obtained with `python scripts/c8.py evaluate triage-category '<input JSON>'` (Camunda REST API `POST /v2/decision-definitions/evaluation`) against the local Camunda 8 Run 8.8.
+Real results from the deployed decision, obtained with the Camunda REST API `POST http://localhost:8080/v2/decision-definitions/evaluation` (body `{"decisionDefinitionId": "triage-category", "variables": {...}}`) against the local Camunda 8 Run 8.8.
 
 _Educational rules for a synthetic scenario – not clinical guidance._
 

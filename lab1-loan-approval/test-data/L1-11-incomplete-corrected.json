@@ -1,0 +1,80 @@
+{
+  "id": "L1-11",
+  "title": "Missing e-mail -> applicant asked for details -> sends them -> re-validated -> disbursed",
+  "category": "recovery",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanDisbursed",
+    "route": "Validate: email missing -> request missing information -> corrected details message -> validate again -> approved -> accepted -> disbursed"
+  },
+  "variables": {
+    "applicationId": "LA-11-${RUN}",
+    "applicantId": "APP-1001",
+    "fullName": "Synthetic Applicant Kilo",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 6200,
+    "monthlyDebtPayments": 400,
+    "loanAmount": 25000,
+    "loanTermMonths": 60,
+    "loanPurpose": "Home renovation"
+  },
+  "steps": [
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L1-11-waiting-for-correction",
+      "waitFor": "parked"
+    },
+    {
+      "do": "publishMessage",
+      "name": "corrected-details-received",
+      "correlationKey": "LA-11-${RUN}",
+      "waitForElement": "Task_WaitForCorrection",
+      "variables": {
+        "email": "synthetic.applicant.kilo@example.org"
+      }
+    },
+    {
+      "do": "publishMessage",
+      "name": "loan-offer-response",
+      "correlationKey": "LA-11-${RUN}",
+      "waitForElement": "Task_WaitForOfferResponse",
+      "variables": {
+        "offerAccepted": true
+      }
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L1-11-corrected-and-disbursed"
+    }
+  ],
+  "reportVariables": [
+    "applicationComplete",
+    "applicantEligible",
+    "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
+    "creditCheckStatus",
+    "creditBureauUsed",
+    "creditScore",
+    "creditRiskBand",
+    "primaryBureauError",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference"
+  ]
+}

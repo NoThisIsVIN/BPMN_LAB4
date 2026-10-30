@@ -6,10 +6,10 @@
   "app": "http://localhost:8081",
   "expected": {
     "endEvent": "EndEvent_LoanRejected",
-    "route": "Validate -> score 731 -> DMN LD-4 Manual review -> officer rejects -> rejection notice -> Loan rejected"
+    "route": "score 731 -> DMN LD-4 Manual review -> officer rejects -> rejection notice"
   },
   "variables": {
-    "applicationId": "LA-2026-0004",
+    "applicationId": "LA-04-${RUN}",
     "applicantId": "APP-1004",
     "fullName": "Synthetic Applicant Delta",
     "email": "synthetic.applicant.delta@example.org",
@@ -35,11 +35,16 @@
     }
   ],
   "reportVariables": [
-    "validationPassed",
+    "applicationComplete",
+    "applicantEligible",
     "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
     "creditCheckStatus",
+    "creditBureauUsed",
     "creditScore",
     "creditRiskBand",
+    "primaryBureauError",
     "creditCheckError",
     "debtToIncomeRatio",
     "loanToIncomeRatio",
@@ -49,6 +54,8 @@
     "decisionReason",
     "offerId",
     "interestRate",
+    "offerAccepted",
+    "disbursementReference",
     "officerDecision",
     "officerComment"
   ]

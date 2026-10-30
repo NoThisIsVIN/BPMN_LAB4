@@ -1,0 +1,57 @@
+{
+  "id": "L1-17",
+  "title": "Debt-to-income above 50% is rejected by the DMN",
+  "category": "rejection",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanRejected",
+    "route": "Validate -> KYC ok -> DTI 0.56 -> DMN LD-2 Rejected -> rejection notice"
+  },
+  "variables": {
+    "applicationId": "LA-17-${RUN}",
+    "applicantId": "APP-1001",
+    "fullName": "Synthetic Applicant Quebec",
+    "email": "synthetic.applicant.quebec@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 3000,
+    "monthlyDebtPayments": 1200,
+    "loanAmount": 15000,
+    "loanTermMonths": 36,
+    "loanPurpose": "Home renovation"
+  },
+  "steps": [
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-variables",
+      "name": "10-operate-variables-L1-17"
+    }
+  ],
+  "reportVariables": [
+    "applicationComplete",
+    "applicantEligible",
+    "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
+    "creditCheckStatus",
+    "creditBureauUsed",
+    "creditScore",
+    "creditRiskBand",
+    "primaryBureauError",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference"
+  ]
+}

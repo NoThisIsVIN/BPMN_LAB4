@@ -3,55 +3,75 @@
 ### real request/response pairs captured from the running application.
 
 @base = http://localhost:8083
+@camunda = http://localhost:8080/v2
 
 ### 1. Register an availability request (done by job worker triage.request-availability)
 POST {{base}}/mock/scheduling/availability-requests
 Content-Type: application/json
 
-{
-  "patientReference": "SYN-P-0101",
-  "department": "GENERAL_PRACTICE",
-  "fromDate": "2026-10-30",
-  "toDate": "2026-11-13",
-  "timeOfDay": "MORNING",
-  "urgencyCategory": "ROUTINE"
-}
+< ./01-register-availability-request.request.json
 
-### 2. Retrieve free slots (this is the call the REST Connector "Retrieve available slots" makes)
-GET {{base}}/mock/scheduling/availability-requests/AR-99CD7EE1/slots
+### 2. Free slots at the main hospital (REST Connector "Retrieve available slots")
+GET {{base}}/mock/scheduling/availability-requests/AR-XXXXXXXX/slots?site=MAIN_HOSPITAL
 Accept: application/json
 
-### 3. Book a slot (done by job worker triage.book-appointment)
+### 3. Free slots at the partner clinic (REST Connector "Search partner clinic") - see 08/09 for NEUROLOGY
+GET {{base}}/mock/scheduling/availability-requests/AR-XXXXXXXX/slots?site=PARTNER_CLINIC
+Accept: application/json
+
+### 4. Book a slot (job worker triage.book-appointment); a slot that is already taken answers HTTP 409 (see 11)
 POST {{base}}/mock/scheduling/bookings
 Content-Type: application/json
 
-{
-  "availabilityRequestId": "AR-99CD7EE1",
-  "slotId": "GEN-20261031-0800",
-  "patientReference": "SYN-P-0101"
-}
+< ./03-book-slot.request.json
 
-### 4. Fault injection – break the scheduling API (slot query answers HTTP 503)
-POST {{base}}/admin/faults/scheduling-api-down?enabled=true
+### 5. Release an unconfirmed booking (job worker triage.release-slot)
+POST {{base}}/mock/scheduling/bookings/BK-XXXXXXXX/cancellation
 
-### 5. Fault injection – repair it
-POST {{base}}/admin/faults/scheduling-api-down?enabled=false
-
-### 6. Current fault switches
+### 6. Fault injection: list / break / repair
 GET {{base}}/admin/faults
 
-### 7. Start a process instance through the Camunda 8 REST API
-POST http://localhost:8080/v2/process-instances
+###
+POST {{base}}/admin/faults/scheduling-api-down?enabled=true
+
+###
+POST {{base}}/admin/faults/scheduling-api-down?enabled=false
+
+### "Another patient" takes every slot we try to book until the next slot query (re-query demo)
+POST {{base}}/admin/faults/booking-conflict-once?enabled=true
+
+### 7. Start a process instance (Camunda 8 Run Orchestration Cluster API, unprotected locally)
+POST {{camunda}}/process-instances
 Content-Type: application/json
 
 {
   "processDefinitionId": "patient-appointment-triage",
   "variables": {
-    "patientReference": "SYN-P-0001",
+    "patientReference": "SYN-P-0201",
     "patientAge": 34,
-    "appointmentPreference": { "department": "GENERAL_PRACTICE", "preferredDate": "2026-11-03", "timeOfDay": "MORNING" },
+    "appointmentPreference": {"department": "GENERAL_PRACTICE", "preferredDate": "2026-11-03", "timeOfDay": "MORNING"},
     "symptomsSummary": "Mild cough and sore throat for a few days",
     "painLevel": 2,
     "symptomDurationDays": 3
   }
+}
+
+### 8. The patient confirms the appointment (message correlated by patientReference)
+POST {{camunda}}/messages/publication
+Content-Type: application/json
+
+{
+  "name": "appointment-confirmed",
+  "correlationKey": "SYN-P-0201",
+  "variables": {"confirmedVia": "SMS reply (synthetic)"}
+}
+
+### 9. Evaluate the triage decision on its own
+POST {{camunda}}/decision-definitions/evaluation
+Content-Type: application/json
+
+{
+  "decisionDefinitionId": "triage-category",
+  "variables": {"chestPain": false, "breathingDifficulty": false, "painLevel": 6, "highFever": false,
+                "patientAge": 52, "symptomDurationDays": 10}
 }

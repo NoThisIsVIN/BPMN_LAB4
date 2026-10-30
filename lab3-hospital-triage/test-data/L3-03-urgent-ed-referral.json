@@ -1,27 +1,15 @@
 {
   "id": "L3-03",
-  "title": "Chest pain routed to immediate clinical assessment, referred to ED",
+  "title": "Chest pain → immediate clinical assessment (Tasklist UI) → ED referral",
   "category": "manual-review",
   "processId": "patient-appointment-triage",
   "app": "http://localhost:8083",
   "expected": {
     "endEvent": "EndEvent_EmergencyReferral",
-    "route": "DMN URGENT_ASSESSMENT (TR-1) → Immediate clinical assessment (EMERGENCY_REFERRAL) → hand over to ED"
+    "route": "DMN URGENT_ASSESSMENT → urgent-care team refers to emergency department"
   },
-  "reportVariables": [
-    "urgencyCategory",
-    "triageReason",
-    "maxWaitDays",
-    "registrationErrors",
-    "reviewOutcome",
-    "assessmentOutcome",
-    "schedulingOutcome",
-    "slotCount",
-    "bookingStatus",
-    "bookingReference",
-    "appointmentSlot"
-  ],
   "variables": {
+    "patientReference": "SYN-P-0103",
     "patientAge": 61,
     "appointmentPreference": {
       "department": "CARDIOLOGY",
@@ -31,16 +19,9 @@
     "symptomsSummary": "Sudden chest tightness while climbing stairs",
     "painLevel": 7,
     "symptomDurationDays": 0,
-    "patientReference": "SYN-P-0003",
     "chestPain": true
   },
   "steps": [
-    {
-      "do": "screenshot",
-      "view": "tasklist-task",
-      "name": "06-tasklist-task-form-urgent",
-      "waitFor": "parked"
-    },
     {
       "do": "completeTask",
       "elementId": "Task_UrgentAssessment",
@@ -55,14 +36,30 @@
       "screenshot": "06-tasklist-task-form-urgent-assessment"
     },
     {
-      "do": "sleep",
-      "seconds": 5
+      "do": "wait"
     },
     {
       "do": "screenshot",
       "view": "operate-instance",
-      "name": "04-operate-instance-L3-03",
-      "waitFor": "parked"
+      "name": "04-operate-instance-L3-03"
     }
+  ],
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "searchSite",
+    "slotCount",
+    "firstAttemptConflicts",
+    "requeried",
+    "bookingStatus",
+    "bookingReference",
+    "bookingSite",
+    "appointmentSlot",
+    "patientConfirmation"
   ]
 }

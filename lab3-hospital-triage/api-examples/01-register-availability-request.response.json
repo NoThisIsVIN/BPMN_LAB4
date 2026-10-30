@@ -1,10 +1,10 @@
 {
-    "patientReference": "SYN-P-0101",
+    "patientReference": "SYN-P-0901",
     "department": "GENERAL_PRACTICE",
     "fromDate": "2026-10-30",
     "toDate": "2026-11-13",
     "timeOfDay": "MORNING",
     "urgencyCategory": "ROUTINE",
-    "availabilityRequestId": "AR-99CD7EE1",
-    "createdAt": "2026-10-30T17:43:11.367638100+05:30"
+    "availabilityRequestId": "AR-5D1F9D14",
+    "createdAt": "2026-10-30T19:24:46.397393+05:30"
 }

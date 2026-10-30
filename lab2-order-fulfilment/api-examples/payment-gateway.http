@@ -1,41 +1,52 @@
-### Mock payment gateway (Lab 2) – called by the REST Connector of task "Process payment".
+### Mock payment providers (Lab 2) – called by the REST Connectors
+### "Charge payment – primary provider" and "Charge payment – backup provider".
 ### Mock tokens only: never send real card numbers or credentials.
 
-### 1. Approved charge
-POST http://localhost:8082/mock/payment-gateway/charges
+### 1. Primary provider: approved charge
+POST http://localhost:8082/mock/payment-gateway/primary/charges
 Content-Type: application/json
 
 {"orderId": "ORD-API-1", "amount": 215.76, "currency": "EUR", "paymentToken": "tok_test_approve", "customerReference": "CUST-0001"}
 
-### 2. Declined charge (HTTP 200, status DECLINED)
-POST http://localhost:8082/mock/payment-gateway/charges
+### 2. Primary provider: declined charge (HTTP 200, status DECLINED – a business answer, not an error)
+POST http://localhost:8082/mock/payment-gateway/primary/charges
 Content-Type: application/json
 
 {"orderId": "ORD-API-2", "amount": 553.79, "currency": "EUR", "paymentToken": "tok_test_decline_funds", "customerReference": "CUST-0004"}
 
-### 3. Gateway outage (HTTP 503) – same effect as the fault switch below
-POST http://localhost:8082/mock/payment-gateway/charges
+### 3. Backup provider: approved charge
+POST http://localhost:8082/mock/payment-gateway/backup/charges
 Content-Type: application/json
 
-{"orderId": "ORD-API-3", "amount": 409.79, "currency": "EUR", "paymentToken": "tok_test_gateway_error", "customerReference": "CUST-0001"}
+{"orderId": "ORD-API-3", "amount": 409.79, "currency": "EUR", "paymentToken": "tok_test_approve", "customerReference": "CUST-0001"}
 
-### 4. Break / repair the gateway (fault injection)
-POST http://localhost:8082/admin/faults/payment-gateway-down?enabled=true
-
-###
-POST http://localhost:8082/admin/faults/payment-gateway-down?enabled=false
-
-### 5. Break / repair the inventory service
-POST http://localhost:8082/admin/faults/inventory-service-down?enabled=true
+### 4. Break / repair a dependency (fault injection). Known faults:
+###    primary-payment-down  -> primary provider HTTP 503 -> process falls back to the backup provider
+###    backup-payment-down   -> backup provider HTTP 503  -> retries -> incident
+###    inventory-service-down -> inventory worker fails   -> retries -> incident
+###    primary-carrier-down  -> BPMN error CARRIER_UNAVAILABLE -> backup carrier
+POST http://localhost:8082/admin/faults/primary-payment-down?enabled=true
 
 ###
-POST http://localhost:8082/admin/faults/inventory-service-down?enabled=false
+POST http://localhost:8082/admin/faults/primary-payment-down?enabled=false
 
-### 6. Current fault switches
+### 5. Current fault switches
 GET http://localhost:8082/admin/faults
 
-### 7. Start an order instance via the Camunda REST API
+### 6. Start an order instance via the Camunda REST API
 POST http://localhost:8080/v2/process-instances
 Content-Type: application/json
 
 {"processDefinitionId": "order-fulfilment", "variables": {"orderId": "ORD-HTTP-1", "customerReference": "CUST-0001", "productId": "PRD-1001", "quantity": 2, "deliveryPreference": "STANDARD", "paymentToken": "tok_test_approve"}}
+
+### 7. Customer sends a new payment method after a decline (correlates to the waiting instance by orderId)
+POST http://localhost:8080/v2/messages/publication
+Content-Type: application/json
+
+{"name": "payment-method-updated", "correlationKey": "ORD-HTTP-1", "variables": {"paymentToken": "tok_test_approve"}}
+
+### 8. Evaluate the priority decision directly
+POST http://localhost:8080/v2/decision-definitions/evaluation
+Content-Type: application/json
+
+{"decisionDefinitionId": "order-priority", "variables": {"deliveryPreference": "EXPRESS", "customerCategory": "VIP", "orderTotal": 300}}

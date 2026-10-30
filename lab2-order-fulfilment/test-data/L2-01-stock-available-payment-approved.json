@@ -6,7 +6,7 @@
   "app": "http://localhost:8082",
   "expected": {
     "endEvent": "EndEvent_OrderFulfilled",
-    "route": "Validate → reserve stock → total 215.76 → DMN LOW → no verification → payment APPROVED → fulfilment"
+    "route": "Validate → primary warehouse reserves → total → DMN LOW → primary provider APPROVED → primary carrier → fulfilment"
   },
   "variables": {
     "orderId": "ORD-2001",
@@ -28,7 +28,7 @@
     {
       "do": "screenshot",
       "view": "operate-variables",
-      "name": "10-operate-variables"
+      "name": "10-operate-variables-L2-01"
     }
   ],
   "reportVariables": [
@@ -36,15 +36,25 @@
     "validationErrors",
     "customerCategory",
     "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
     "reservationId",
     "reservationStatus",
     "orderTotal",
     "deliveryPriority",
     "slaHours",
     "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
     "paymentStatus",
     "transactionId",
     "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
     "shipmentId",
     "trackingNumber"
   ]

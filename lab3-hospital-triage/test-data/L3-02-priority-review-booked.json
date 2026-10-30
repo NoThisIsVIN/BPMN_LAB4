@@ -1,27 +1,15 @@
 {
   "id": "L3-02",
-  "title": "Moderate pain routed to priority staff review, staff books",
+  "title": "Moderate pain → priority staff review (Tasklist UI) → booked → confirmed",
   "category": "manual-review",
   "processId": "patient-appointment-triage",
   "app": "http://localhost:8083",
   "expected": {
-    "endEvent": "EndEvent_AppointmentBooked",
-    "route": "DMN PRIORITY_REVIEW (TR-5) → Priority staff review (BOOK_APPOINTMENT) → slots → book → confirmation"
+    "endEvent": "EndEvent_AppointmentConfirmed",
+    "route": "DMN PRIORITY_REVIEW → staff books in Tasklist → main-hospital slot → confirmed"
   },
-  "reportVariables": [
-    "urgencyCategory",
-    "triageReason",
-    "maxWaitDays",
-    "registrationErrors",
-    "reviewOutcome",
-    "assessmentOutcome",
-    "schedulingOutcome",
-    "slotCount",
-    "bookingStatus",
-    "bookingReference",
-    "appointmentSlot"
-  ],
   "variables": {
+    "patientReference": "SYN-P-0102",
     "patientAge": 52,
     "appointmentPreference": {
       "department": "ORTHOPAEDICS",
@@ -30,20 +18,13 @@
     },
     "symptomsSummary": "Knee pain after a fall, swelling when walking",
     "painLevel": 6,
-    "symptomDurationDays": 10,
-    "patientReference": "SYN-P-0002"
+    "symptomDurationDays": 10
   },
   "steps": [
     {
       "do": "screenshot",
       "view": "tasklist-list",
       "name": "05-tasklist-task-list",
-      "waitFor": "parked"
-    },
-    {
-      "do": "screenshot",
-      "view": "tasklist-task",
-      "name": "06-tasklist-task-form",
       "waitFor": "parked"
     },
     {
@@ -60,14 +41,41 @@
       "screenshot": "06-tasklist-task-form-priority-review"
     },
     {
-      "do": "sleep",
-      "seconds": 5
+      "do": "publishMessage",
+      "name": "appointment-confirmed",
+      "correlationKey": "SYN-P-0102",
+      "waitForElement": "Task_WaitForConfirmation",
+      "variables": {
+        "confirmedVia": "SMS reply (synthetic)"
+      }
+    },
+    {
+      "do": "waitForElement",
+      "elementId": "EndEvent_AppointmentConfirmed",
+      "state": "COMPLETED"
     },
     {
       "do": "screenshot",
       "view": "operate-instance",
-      "name": "04-operate-instance-L3-02",
-      "waitFor": "parked"
+      "name": "04-operate-instance-L3-02"
     }
+  ],
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "searchSite",
+    "slotCount",
+    "firstAttemptConflicts",
+    "requeried",
+    "bookingStatus",
+    "bookingReference",
+    "bookingSite",
+    "appointmentSlot",
+    "patientConfirmation"
   ]
 }

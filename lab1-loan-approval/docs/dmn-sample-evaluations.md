@@ -1,7 +1,7 @@
 # DMN `loan-decision` – sample evaluations
 
 Evaluated against the **deployed** decision on the local Camunda 8 Run with
-`python scripts/c8.py evaluate loan-decision '<json>'` (Orchestration Cluster API `POST /v2/decision-definitions/evaluation`).
+the Orchestration Cluster API `POST /v2/decision-definitions/evaluation`.
 
 | Case | Input | Output | Matched rule |
 |---|---|---|---|

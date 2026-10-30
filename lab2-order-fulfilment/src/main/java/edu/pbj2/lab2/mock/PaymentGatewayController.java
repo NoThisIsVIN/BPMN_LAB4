@@ -9,23 +9,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Mock payment gateway, called by the REST Outbound Connector of task "Process payment".
+ * Two mock payment providers, called by the REST Outbound Connectors of the tasks
+ * "Charge payment – primary provider" ({@code POST /mock/payment-gateway/primary/charges}) and
+ * "Charge payment – backup provider" ({@code POST /mock/payment-gateway/backup/charges}).
  * Accepts only mock tokens – never real card data or credentials.
  *
  * <ul>
  *   <li>{@code tok_test_approve} -> 200, status APPROVED</li>
  *   <li>{@code tok_test_decline_funds} -> 200, status DECLINED "Insufficient funds"</li>
  *   <li>{@code tok_test_decline_fraud} -> 200, status DECLINED "Suspected fraud"</li>
- *   <li>{@code tok_test_gateway_error} -> 503</li>
- *   <li>fault {@code payment-gateway-down} -> 503 for every request</li>
  *   <li>any other token -> 200, status DECLINED "Unknown payment token"</li>
+ *   <li>fault {@code primary-payment-down} / {@code backup-payment-down} -> 503 from that provider</li>
  * </ul>
+ * A decline is a business answer (HTTP 200), a 5xx is a technical failure of the provider.
  */
 @RestController
 @RequestMapping("/mock/payment-gateway")
@@ -38,15 +41,21 @@ public class PaymentGatewayController {
     this.faults = faults;
   }
 
-  @PostMapping("/charges")
-  public ResponseEntity<Map<String, Object>> charge(@RequestBody Map<String, Object> request) {
+  @PostMapping("/{provider}/charges")
+  public ResponseEntity<Map<String, Object>> charge(@PathVariable String provider,
+      @RequestBody Map<String, Object> request) {
     String token = String.valueOf(request.get("paymentToken"));
-    LOG.info("Charge requested: {}", request);
+    LOG.info("Charge requested at {} provider: {}", provider, request);
 
-    if (faults.isActive(FaultInjection.PAYMENT_GATEWAY_DOWN) || "tok_test_gateway_error".equals(token)) {
-      LOG.warn("Payment gateway responding 503");
+    boolean down = switch (provider) {
+      case "primary" -> faults.isActive(FaultInjection.PRIMARY_PAYMENT_DOWN);
+      case "backup" -> faults.isActive(FaultInjection.BACKUP_PAYMENT_DOWN);
+      default -> true;
+    };
+    if (down) {
+      LOG.warn("{} payment provider responding 503", provider);
       return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-          .body(Map.of("error", "Payment gateway temporarily unavailable", "status", 503));
+          .body(Map.of("error", capitalise(provider) + " payment provider temporarily unavailable", "status", 503));
     }
 
     String declineReason = switch (token) {
@@ -56,6 +65,7 @@ public class PaymentGatewayController {
       default -> "Unknown payment token";
     };
     Map<String, Object> body = new LinkedHashMap<>();
+    body.put("provider", provider.toUpperCase());
     body.put("transactionId", "TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
     body.put("orderId", request.get("orderId"));
     body.put("amount", request.get("amount"));
@@ -65,5 +75,9 @@ public class PaymentGatewayController {
     body.put("processedAt", OffsetDateTime.now().toString());
     LOG.info("Charge result: {}", body);
     return ResponseEntity.ok(body);
+  }
+
+  private static String capitalise(String s) {
+    return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
   }
 }

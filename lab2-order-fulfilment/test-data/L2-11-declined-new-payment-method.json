@@ -1,0 +1,65 @@
+{
+  "id": "L2-11",
+  "title": "Card declined → customer sends a new payment method → paid → fulfilled",
+  "category": "fallback",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OrderFulfilled",
+    "route": "… → primary provider DECLINED → ask customer → message payment-method-updated (new token) → loop back → APPROVED → fulfilment"
+  },
+  "variables": {
+    "orderId": "ORD-2011",
+    "customerReference": "CUST-0001",
+    "productId": "PRD-4004",
+    "quantity": 1,
+    "deliveryPreference": "EXPRESS",
+    "paymentToken": "tok_test_decline_fraud"
+  },
+  "steps": [
+    {
+      "do": "publishMessage",
+      "name": "payment-method-updated",
+      "correlationKey": "ORD-2011",
+      "waitForElement": "Task_WaitForPaymentMethod",
+      "variables": {
+        "paymentToken": "tok_test_approve"
+      }
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L2-11-new-payment-method"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

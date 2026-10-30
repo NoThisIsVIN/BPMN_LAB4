@@ -29,10 +29,11 @@ class ApplicantValidatorTest {
   }
 
   @Test
-  void validApplicationPassesAndComputesRatios() {
+  void validApplicationIsCompleteEligibleAndComputesRatios() {
     Map<String, Object> out = validator.validate(validApplication());
 
-    assertThat(out.get("validationPassed")).isEqualTo(true);
+    assertThat(out.get("applicationComplete")).isEqualTo(true);
+    assertThat(out.get("applicantEligible")).isEqualTo(true);
     assertThat((List<?>) out.get("validationErrors")).isEmpty();
     // 25 000 over 60 months at 9% APR -> 518.96 per month
     assertThat(out.get("monthlyInstallment")).isEqualTo(518.96);
@@ -41,20 +42,32 @@ class ApplicantValidatorTest {
   }
 
   @Test
-  void collectsAllValidationErrors() {
+  void missingAndMalformedFieldsMakeTheApplicationIncomplete() {
     Map<String, Object> v = validApplication();
     v.remove("email");
+    v.put("applicantId", "1001");
+
+    Map<String, Object> out = validator.validate(v);
+
+    assertThat(out.get("applicationComplete")).isEqualTo(false);
+    assertThat((List<String>) out.get("validationErrors")).containsExactlyInAnyOrder(
+        "email is required", "applicantId must look like APP-1234");
+    assertThat(out).doesNotContainKey("debtToIncomeRatio");
+  }
+
+  @Test
+  void completeButOutsideProductLimitsIsNotEligible() {
+    Map<String, Object> v = validApplication();
     v.put("age", 16);
     v.put("loanAmount", 500);
 
     Map<String, Object> out = validator.validate(v);
 
-    assertThat(out.get("validationPassed")).isEqualTo(false);
-    assertThat((List<String>) out.get("validationErrors")).containsExactlyInAnyOrder(
-        "email is required",
-        "age must be between 18 and 75 (was 16)",
-        "loanAmount must be between 1 000 and 500 000");
-    assertThat(out).doesNotContainKey("debtToIncomeRatio");
+    assertThat(out.get("applicationComplete")).isEqualTo(true);
+    assertThat(out.get("applicantEligible")).isEqualTo(false);
+    assertThat((List<String>) out.get("eligibilityIssues")).containsExactlyInAnyOrder(
+        "age must be between 18 and 75 (was 16)", "loan amount must be between 1 000 and 500 000");
+    assertThat((String) out.get("decisionReason")).startsWith("Not eligible: ");
   }
 
   @Test

@@ -1,0 +1,66 @@
+{
+  "id": "L1-06",
+  "title": "Primary bureau returns HTTP 500 -> score taken from the backup bureau -> approved",
+  "category": "fallback",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanDisbursed",
+    "route": "primary bureau HTTP 500 -> PRIMARY_BUREAU_DOWN -> backup bureau 741 -> DMN LD-5 -> offer accepted -> disbursed"
+  },
+  "variables": {
+    "applicationId": "LA-06-${RUN}",
+    "applicantId": "APP-ERR-500",
+    "fullName": "Synthetic Applicant Foxtrot",
+    "email": "synthetic.applicant.foxtrot@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 5000,
+    "monthlyDebtPayments": 300,
+    "loanAmount": 20000,
+    "loanTermMonths": 48,
+    "loanPurpose": "Car purchase"
+  },
+  "steps": [
+    {
+      "do": "publishMessage",
+      "name": "loan-offer-response",
+      "correlationKey": "LA-06-${RUN}",
+      "waitForElement": "Task_WaitForOfferResponse",
+      "variables": {
+        "offerAccepted": true
+      }
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L1-06-backup-bureau"
+    }
+  ],
+  "reportVariables": [
+    "applicationComplete",
+    "applicantEligible",
+    "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
+    "creditCheckStatus",
+    "creditBureauUsed",
+    "creditScore",
+    "creditRiskBand",
+    "primaryBureauError",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference"
+  ]
+}

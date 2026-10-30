@@ -1,0 +1,68 @@
+{
+  "id": "L3-10",
+  "title": "Slots taken by other patients while booking → re-query → booked → confirmed",
+  "category": "fallback",
+  "processId": "patient-appointment-triage",
+  "app": "http://localhost:8083",
+  "expected": {
+    "endEvent": "EndEvent_AppointmentConfirmed",
+    "route": "book → every slot HTTP 409 → BPMN error SLOT_TAKEN → re-query slots → book re-queried slot → confirmed"
+  },
+  "variables": {
+    "patientReference": "SYN-P-0110",
+    "patientAge": 55,
+    "appointmentPreference": {
+      "department": "CARDIOLOGY",
+      "preferredDate": "2026-11-03",
+      "timeOfDay": "ANY"
+    },
+    "symptomsSummary": "Occasional palpitations, no chest pain",
+    "painLevel": 2,
+    "symptomDurationDays": 9
+  },
+  "steps": [
+    {
+      "do": "fault",
+      "name": "booking-conflict-once",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "publishMessage",
+      "name": "appointment-confirmed",
+      "correlationKey": "SYN-P-0110",
+      "waitForElement": "Task_WaitForConfirmation",
+      "variables": {
+        "confirmedVia": "SMS reply (synthetic)"
+      }
+    },
+    {
+      "do": "waitForElement",
+      "elementId": "EndEvent_AppointmentConfirmed",
+      "state": "COMPLETED"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L3-10-slot-taken-requery"
+    }
+  ],
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "searchSite",
+    "slotCount",
+    "firstAttemptConflicts",
+    "requeried",
+    "bookingStatus",
+    "bookingReference",
+    "bookingSite",
+    "appointmentSlot",
+    "patientConfirmation"
+  ]
+}

@@ -6,20 +6,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 /**
- * In-memory switches that simulate a broken dependency, so an incident can be produced
- * on purpose, diagnosed in Operate, "repaired" by switching the fault off, and retried.
+ * In-memory switches that simulate a broken dependency, so failures can be produced on purpose:
+ * an incident that is diagnosed in Operate, repaired by switching the fault off, and retried, or a
+ * fallback path (backup credit bureau) that the process takes by itself.
  */
 @Component
 public class FaultInjection {
 
-  /** Validation worker cannot reach its (simulated) reference-data service. */
+  /** Validation worker cannot reach its (simulated) reference-data service -> incident. */
   public static final String VALIDATION_REFERENCE_DATA = "validation-reference-data";
-  /** Mock credit bureau answers every call with HTTP 503. */
-  public static final String CREDIT_BUREAU_DOWN = "credit-bureau-down";
+  /** Primary (CIBIL-like) credit bureau answers HTTP 503 -> process falls back to the backup bureau. */
+  public static final String PRIMARY_BUREAU_DOWN = "primary-bureau-down";
+  /** Backup credit bureau answers HTTP 503 -> with both down, a loan officer decides without a score. */
+  public static final String BACKUP_BUREAU_DOWN = "backup-bureau-down";
 
   private final Map<String, Boolean> faults = new ConcurrentHashMap<>(Map.of(
       VALIDATION_REFERENCE_DATA, false,
-      CREDIT_BUREAU_DOWN, false));
+      PRIMARY_BUREAU_DOWN, false,
+      BACKUP_BUREAU_DOWN, false));
 
   public boolean isActive(String fault) {
     return faults.getOrDefault(fault, false);

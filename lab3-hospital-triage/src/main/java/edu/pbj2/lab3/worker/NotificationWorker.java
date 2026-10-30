@@ -26,13 +26,19 @@ public class NotificationWorker {
       @Variable String patientReference,
       @Variable String appointmentSlot,
       @Variable String bookingReference,
-      @Variable List<String> registrationErrors) {
+      @Variable List<String> registrationErrors,
+      @Variable String confirmationTimeout) {
     String template = headers.getOrDefault("template", "GENERIC");
     String message = switch (template) {
       case "APPOINTMENT_CONFIRMED" -> "Your appointment is confirmed: " + appointmentSlot
           + (bookingReference == null ? "" : " (booking " + bookingReference + ")");
       case "MISSING_DETAILS" -> "We could not register your appointment request. Please provide: " + registrationErrors;
       case "WAITLISTED" -> "No suitable appointment is available right now. You have been added to the waiting list.";
+      case "CONFIRMATION_REQUEST" -> "Please confirm your appointment " + appointmentSlot
+          + " within " + confirmationTimeout + ", otherwise the slot is released for other patients.";
+      case "CONFIRMATION_REMINDER" -> "Reminder: please confirm your appointment " + appointmentSlot + ".";
+      case "SLOT_RELEASED" -> "Your appointment " + appointmentSlot
+          + " was not confirmed in time and has been released. Please contact us to book again.";
       default -> "Update on your appointment request";
     };
     LOG.info("[{}] PATIENT MESSAGE ({}): {}", patientReference, template, message);
@@ -43,7 +49,8 @@ public class NotificationWorker {
   public Map<String, Object> notifyStaff(
       @CustomHeaders Map<String, String> headers,
       @Variable String patientReference,
-      @Variable String triageReason) {
+      @Variable String triageReason,
+      @Variable String urgentEscalationAfter) {
     String template = headers.getOrDefault("template", "GENERIC");
     String recipient;
     String message;
@@ -54,7 +61,7 @@ public class NotificationWorker {
       }
       case "DUTY_MANAGER_ESCALATION" -> {
         recipient = "duty-manager";
-        message = "Urgent assessment for patient " + patientReference + " not picked up within 15 minutes";
+        message = "Urgent assessment for patient " + patientReference + " not picked up within " + urgentEscalationAfter;
       }
       default -> {
         recipient = "clinical-staff";

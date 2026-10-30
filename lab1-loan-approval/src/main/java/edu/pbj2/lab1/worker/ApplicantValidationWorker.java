@@ -8,6 +8,7 @@ import io.camunda.client.api.response.ActivatedJob;
 import io.camunda.client.exception.CamundaError;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,16 @@ public class ApplicantValidationWorker {
   private static final Logger LOG = LoggerFactory.getLogger(ApplicantValidationWorker.class);
   private static final Duration RETRY_BACKOFF = Duration.ofSeconds(5);
 
+  /**
+   * Durations of the process timers (ISO-8601). The BPMN timers read these variables, so a test can start an
+   * instance with e.g. {@code "correctionTimeout": "PT8S"}; otherwise these business defaults apply.
+   */
+  static final Map<String, String> TIMER_DEFAULTS = Map.of(
+      "correctionTimeout", "P7D",
+      "reviewReminderAfter", "PT24H",
+      "reviewEscalationAfter", "PT48H",
+      "offerAcceptanceTimeout", "P14D");
+
   private final FaultInjection faults;
   private final ApplicantValidator validator;
 
@@ -31,7 +42,8 @@ public class ApplicantValidationWorker {
 
   @JobWorker(type = "loan.validate-applicant")
   public Map<String, Object> validate(ActivatedJob job) {
-    String applicationId = String.valueOf(job.getVariablesAsMap().get("applicationId"));
+    Map<String, Object> variables = job.getVariablesAsMap();
+    String applicationId = String.valueOf(variables.get("applicationId"));
 
     if (faults.isActive(FaultInjection.VALIDATION_REFERENCE_DATA)) {
       // Transient dependency outage: let Zeebe retry with back-off; when retries reach 0 an incident is raised.
@@ -44,10 +56,15 @@ public class ApplicantValidationWorker {
     }
 
     try {
-      Map<String, Object> result = validator.validate(job.getVariablesAsMap());
+      Map<String, Object> result = new LinkedHashMap<>(validator.validate(variables));
       result.put("validatedAt", OffsetDateTime.now().toString());
-      LOG.info("[{}] validation passed={} errors={}", applicationId, result.get("validationPassed"),
-          result.get("validationErrors"));
+      TIMER_DEFAULTS.forEach((name, duration) -> {
+        if (variables.get(name) == null) {
+          result.put(name, duration);
+        }
+      });
+      LOG.info("[{}] complete={} eligible={} errors={} issues={}", applicationId, result.get("applicationComplete"),
+          result.get("applicantEligible"), result.get("validationErrors"), result.get("eligibilityIssues"));
       return result;
     } catch (MalformedVariableException e) {
       // Data problem: retrying will not help, so raise the incident immediately (retries = 0).

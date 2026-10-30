@@ -1,6 +1,6 @@
 # DMN `order-priority` – sample evaluations
 
-Real results from the deployed decision, evaluated with `python scripts/c8.py evaluate order-priority '<json>'` (Camunda REST API `POST /v2/decision-definitions/evaluation`).
+Real results from the deployed decision, evaluated through the Camunda REST API `POST /v2/decision-definitions/evaluation` (see `api-examples/payment-gateway.http`, request 8).
 
 | Target rule | deliveryPreference | customerCategory | orderTotal | → deliveryPriority | slaHours | ruleId | matched rule # |
 |---|---|---|---|---|---|---|---|

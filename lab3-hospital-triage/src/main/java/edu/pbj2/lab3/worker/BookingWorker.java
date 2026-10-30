@@ -16,8 +16,10 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 
 /**
- * Service task "Book appointment" (job type triage.book-appointment). Books the earliest of the
- * retrieved slots; if another booking took it in the meantime (HTTP 409) the next slot is tried.
+ * Service tasks "Book appointment" and "Book re-queried slot" (job type triage.book-appointment).
+ * Tries the retrieved slots in order. When every one of them was taken by someone else in the meantime
+ * (HTTP 409) the worker throws BPMN error SLOT_TAKEN, which the process handles with a re-query
+ * (first time) or the scheduling staff (second time). A technical failure is retried and becomes an incident.
  */
 @Component
 public class BookingWorker {
@@ -35,6 +37,7 @@ public class BookingWorker {
       @Variable String patientReference,
       @Variable String availabilityRequestId,
       @Variable List<Map<String, Object>> availableSlots) {
+    int conflicts = 0;
     try {
       for (Map<String, Object> slot : availableSlots) {
         try {
@@ -47,12 +50,15 @@ public class BookingWorker {
           Map<String, Object> out = new LinkedHashMap<>();
           out.put("bookingStatus", booking.get("status"));
           out.put("bookingReference", booking.get("bookingReference"));
+          out.put("bookingSite", booked.get("site"));
           out.put("appointmentSlot", "%s %s - %s, %s, %s".formatted(booked.get("date"), booked.get("time"),
               booked.get("department"), booked.get("clinician"), booked.get("location")));
           out.put("appointmentDetails", booked);
+          out.put("slotConflicts", conflicts);
           LOG.info("[{}] booked {}", patientReference, out);
           return out;
         } catch (HttpClientErrorException.Conflict taken) {
+          conflicts++;
           LOG.warn("[{}] slot {} already taken, trying next", patientReference, slot.get("slotId"));
         }
       }
@@ -60,7 +66,9 @@ public class BookingWorker {
       throw CamundaError.jobError("Booking failed: " + e.getMessage(), null, job.getRetries() - 1,
           Duration.ofSeconds(5));
     }
-    throw CamundaError.jobError("All retrieved slots were taken before booking; retry to search again", null,
-        job.getRetries() - 1, Duration.ofSeconds(5));
+    LOG.warn("[{}] all {} retrieved slots were taken -> BPMN error SLOT_TAKEN", patientReference, conflicts);
+    throw CamundaError.bpmnError("SLOT_TAKEN",
+        "All " + conflicts + " retrieved slots were taken by other patients before booking",
+        Map.of("slotConflicts", conflicts));
   }
 }

@@ -1,49 +1,55 @@
 {
-    "availabilityRequestId": "AR-99CD7EE1",
+    "availabilityRequestId": "AR-5D1F9D14",
+    "site": "MAIN_HOSPITAL",
     "department": "GENERAL_PRACTICE",
     "fromDate": "2026-10-30",
     "toDate": "2026-11-13",
     "timeOfDay": "MORNING",
     "slots": [
         {
-            "clinician": "Clinician A (synthetic)",
-            "date": "2026-10-31",
-            "time": "08:00",
-            "location": "Outpatients block A, room 1",
+            "slotId": "MH-GEN-20261030-1000",
+            "site": "MAIN_HOSPITAL",
             "department": "GENERAL_PRACTICE",
-            "slotId": "GEN-20261031-0800"
+            "date": "2026-10-30",
+            "time": "10:00",
+            "clinician": "Clinician C (synthetic)",
+            "location": "Outpatients block A, room 3"
         },
         {
-            "clinician": "Clinician B (synthetic)",
+            "slotId": "MH-GEN-20261030-1100",
+            "site": "MAIN_HOSPITAL",
+            "department": "GENERAL_PRACTICE",
+            "date": "2026-10-30",
+            "time": "11:00",
+            "clinician": "Clinician D (synthetic)",
+            "location": "Outpatients block A, room 1"
+        },
+        {
+            "slotId": "MH-GEN-20261031-0800",
+            "site": "MAIN_HOSPITAL",
+            "department": "GENERAL_PRACTICE",
+            "date": "2026-10-31",
+            "time": "08:00",
+            "clinician": "Clinician A (synthetic)",
+            "location": "Outpatients block A, room 1"
+        },
+        {
+            "slotId": "MH-GEN-20261031-0900",
+            "site": "MAIN_HOSPITAL",
+            "department": "GENERAL_PRACTICE",
             "date": "2026-10-31",
             "time": "09:00",
-            "location": "Outpatients block A, room 2",
-            "department": "GENERAL_PRACTICE",
-            "slotId": "GEN-20261031-0900"
+            "clinician": "Clinician B (synthetic)",
+            "location": "Outpatients block A, room 2"
         },
         {
-            "clinician": "Clinician C (synthetic)",
+            "slotId": "MH-GEN-20261031-1000",
+            "site": "MAIN_HOSPITAL",
+            "department": "GENERAL_PRACTICE",
             "date": "2026-10-31",
             "time": "10:00",
-            "location": "Outpatients block A, room 3",
-            "department": "GENERAL_PRACTICE",
-            "slotId": "GEN-20261031-1000"
-        },
-        {
-            "clinician": "Clinician D (synthetic)",
-            "date": "2026-10-31",
-            "time": "11:00",
-            "location": "Outpatients block A, room 1",
-            "department": "GENERAL_PRACTICE",
-            "slotId": "GEN-20261031-1100"
-        },
-        {
-            "clinician": "Clinician A (synthetic)",
-            "date": "2026-11-01",
-            "time": "08:00",
-            "location": "Outpatients block A, room 1",
-            "department": "GENERAL_PRACTICE",
-            "slotId": "GEN-20261101-0800"
+            "clinician": "Clinician C (synthetic)",
+            "location": "Outpatients block A, room 3"
         }
     ]
 }

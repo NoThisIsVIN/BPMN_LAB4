@@ -1,0 +1,67 @@
+{
+  "id": "L2-09",
+  "title": "Primary payment provider down → backup provider charges → fulfilled",
+  "category": "fallback",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OrderFulfilled",
+    "route": "… → primary provider 503 → BPMN error PAYMENT_PROVIDER_DOWN → backup provider APPROVED → fulfilment"
+  },
+  "variables": {
+    "orderId": "ORD-2009",
+    "customerReference": "CUST-0001",
+    "productId": "PRD-2002",
+    "quantity": 1,
+    "deliveryPreference": "STANDARD",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "fault",
+      "name": "primary-payment-down",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "fault",
+      "name": "primary-payment-down",
+      "enabled": false
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L2-09-backup-provider"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

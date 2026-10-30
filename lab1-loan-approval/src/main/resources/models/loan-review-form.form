@@ -1,7 +1,10 @@
 {
   "executionPlatform": "Camunda Cloud",
   "executionPlatformVersion": "8.8.0",
-  "exporter": { "name": "Camunda Modeler", "version": "5.49.0" },
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.49.0"
+  },
   "schemaVersion": 18,
   "id": "loan-review-form",
   "type": "default",
@@ -33,7 +36,7 @@
         {
           "id": "Text_Credit",
           "type": "text",
-          "text": "| Field | Value |\n|---|---|\n| Credit check status | **{{creditCheckStatus}}** |\n| Credit score | {{creditScore}} |\n| Risk band | {{creditRiskBand}} |\n| Bureau reference | {{creditBureauReference}} |\n| Credit check error | {{creditCheckError}} |"
+          "text": "| Field | Value |\n|---|---|\n| Credit check status | **{{creditCheckStatus}}** |\n| Bureau used | {{creditBureauUsed}} |\n| Credit score | {{creditScore}} |\n| Risk band | {{creditRiskBand}} |\n| Bureau reference | {{creditBureauReference}} |\n| Primary bureau error | {{primaryBureauError}} |\n| Credit check error | {{creditCheckError}} |\n| Identity (KYC) | {{kycReference}} |"
         }
       ]
     },
@@ -46,7 +49,7 @@
         {
           "id": "Text_Automated",
           "type": "text",
-          "text": "DMN rule **{{loanDecision.ruleId}}**: {{loanDecision.reason}}\n\n_If the credit check status is UNAVAILABLE, the credit bureau failed and no automated decision was made._"
+          "text": "DMN rule **{{loanDecision.ruleId}}**: {{loanDecision.reason}}\n\n_If the credit check status is UNAVAILABLE, both credit bureaus failed and no automated decision was made._"
         }
       ]
     },
@@ -56,17 +59,28 @@
       "label": "Officer decision",
       "key": "officerDecision",
       "values": [
-        { "label": "Approve loan", "value": "APPROVED" },
-        { "label": "Reject loan", "value": "REJECTED" }
+        {
+          "label": "Approve loan",
+          "value": "APPROVED"
+        },
+        {
+          "label": "Reject loan",
+          "value": "REJECTED"
+        }
       ],
-      "validate": { "required": true }
+      "validate": {
+        "required": true
+      }
     },
     {
       "id": "Field_OfficerComment",
       "type": "textarea",
       "label": "Justification (shown in the decision record)",
       "key": "officerComment",
-      "validate": { "required": true, "minLength": 5 }
+      "validate": {
+        "required": true,
+        "minLength": 5
+      }
     }
   ]
 }

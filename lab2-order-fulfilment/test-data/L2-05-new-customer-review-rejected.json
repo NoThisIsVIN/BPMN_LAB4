@@ -6,7 +6,7 @@
   "app": "http://localhost:8082",
   "expected": {
     "endEvent": "EndEvent_CancelledByReviewer",
-    "route": "Validate → reserve → total 1077.60 (NEW ≥ 1000) → DMN NORMAL → reviewer REJECTS → release stock → notify → cancelled"
+    "route": "Validate → reserve → NEW customer, total ≥ 1000 → reviewer REJECTS → stock released → cancelled"
   },
   "variables": {
     "orderId": "ORD-2005",
@@ -22,7 +22,7 @@
       "elementId": "Task_VerifyOrder",
       "variables": {
         "verificationDecision": "REJECTED",
-        "verificationComment": "New account, unusually large first order - cannot verify identity."
+        "verificationComment": "First order, high value, delivery address unverified."
       }
     },
     {
@@ -39,15 +39,25 @@
     "validationErrors",
     "customerCategory",
     "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
     "reservationId",
     "reservationStatus",
     "orderTotal",
     "deliveryPriority",
     "slaHours",
     "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
     "paymentStatus",
     "transactionId",
     "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
     "shipmentId",
     "trackingNumber"
   ]

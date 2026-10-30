@@ -51,15 +51,32 @@ class OrderValidatorAndInventoryTest {
 
   @Test
   void reservationReducesStockAndReleaseRestoresIt() {
-    assertThat(inventory.reserve("PRD-LOW-01", 5)).isEmpty();
+    String primary = InventoryService.PRIMARY_WAREHOUSE;
+    assertThat(inventory.reserve(primary, "PRD-LOW-01", 5)).isEmpty();
 
-    var reservation = inventory.reserve("PRD-LOW-01", 2).orElseThrow();
-    assertThat(inventory.available("PRD-LOW-01")).isZero();
+    var reservation = inventory.reserve(primary, "PRD-LOW-01", 2).orElseThrow();
+    assertThat(inventory.available(primary, "PRD-LOW-01")).isZero();
 
     assertThat(inventory.release(reservation.id()).orElseThrow().status()).isEqualTo("RELEASED");
-    assertThat(inventory.available("PRD-LOW-01")).isEqualTo(2);
+    assertThat(inventory.available(primary, "PRD-LOW-01")).isEqualTo(2);
     // releasing twice must not create stock out of thin air
     inventory.release(reservation.id());
-    assertThat(inventory.available("PRD-LOW-01")).isEqualTo(2);
+    assertThat(inventory.available(primary, "PRD-LOW-01")).isEqualTo(2);
+  }
+
+  @Test
+  void secondaryWarehouseCoversWhatThePrimaryCannot() {
+    String primary = InventoryService.warehouseFor("PRIMARY");
+    String secondary = InventoryService.warehouseFor("SECONDARY");
+
+    // the standing desk is sold out centrally but the regional warehouse has stock
+    assertThat(inventory.reserve(primary, "PRD-5005", 1)).isEmpty();
+    var reservation = inventory.reserve(secondary, "PRD-5005", 1).orElseThrow();
+    assertThat(reservation.warehouse()).isEqualTo(InventoryService.SECONDARY_WAREHOUSE);
+
+    // releasing returns the unit to the warehouse it was taken from, not to the primary one
+    inventory.release(reservation.id());
+    assertThat(inventory.available(secondary, "PRD-5005")).isEqualTo(40);
+    assertThat(inventory.available(primary, "PRD-5005")).isZero();
   }
 }

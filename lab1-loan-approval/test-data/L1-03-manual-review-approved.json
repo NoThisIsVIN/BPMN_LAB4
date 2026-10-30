@@ -1,15 +1,15 @@
 {
   "id": "L1-03",
-  "title": "Borderline score goes to manual review, officer approves in Tasklist",
+  "title": "Borderline score: officer approves in Tasklist, offer accepted",
   "category": "manual-review",
   "processId": "loan-approval",
   "app": "http://localhost:8081",
   "expected": {
-    "endEvent": "EndEvent_LoanApproved",
-    "route": "Validate -> score 648 -> DMN LD-6 Manual review -> officer approves -> offer -> Loan approved"
+    "endEvent": "EndEvent_LoanDisbursed",
+    "route": "score 648 -> DMN LD-6 Manual review -> officer approves (Tasklist UI) -> offer accepted -> disbursed"
   },
   "variables": {
-    "applicationId": "LA-2026-0003",
+    "applicationId": "LA-03-${RUN}",
     "applicantId": "APP-1003",
     "fullName": "Synthetic Applicant Charlie",
     "email": "synthetic.applicant.charlie@example.org",
@@ -47,20 +47,29 @@
       "screenshot": "06-tasklist-task-form"
     },
     {
-      "do": "wait"
+      "do": "publishMessage",
+      "name": "loan-offer-response",
+      "correlationKey": "LA-03-${RUN}",
+      "waitForElement": "Task_WaitForOfferResponse",
+      "variables": {
+        "offerAccepted": true
+      }
     },
     {
-      "do": "screenshot",
-      "view": "operate-instance",
-      "name": "04-operate-instance-L1-03-approved-after-review"
+      "do": "wait"
     }
   ],
   "reportVariables": [
-    "validationPassed",
+    "applicationComplete",
+    "applicantEligible",
     "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
     "creditCheckStatus",
+    "creditBureauUsed",
     "creditScore",
     "creditRiskBand",
+    "primaryBureauError",
     "creditCheckError",
     "debtToIncomeRatio",
     "loanToIncomeRatio",
@@ -70,6 +79,8 @@
     "decisionReason",
     "offerId",
     "interestRate",
+    "offerAccepted",
+    "disbursementReference",
     "officerDecision",
     "officerComment"
   ]

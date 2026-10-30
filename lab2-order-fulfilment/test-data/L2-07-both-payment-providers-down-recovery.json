@@ -1,0 +1,95 @@
+{
+  "id": "L2-07",
+  "title": "Both payment providers down → incident → backup provider restored → retry → fulfilled",
+  "category": "failure-recovery",
+  "processId": "order-fulfilment",
+  "app": "http://localhost:8082",
+  "expected": {
+    "endEvent": "EndEvent_OrderFulfilled",
+    "route": "… → primary provider 503 → BPMN error → backup provider 503 ×3 (5 s back-off) → INCIDENT → backup restored → retry → APPROVED → fulfilment"
+  },
+  "variables": {
+    "orderId": "ORD-2007",
+    "customerReference": "CUST-0001",
+    "productId": "PRD-4004",
+    "quantity": 1,
+    "deliveryPreference": "EXPRESS",
+    "paymentToken": "tok_test_approve"
+  },
+  "steps": [
+    {
+      "do": "fault",
+      "name": "primary-payment-down",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "fault",
+      "name": "backup-payment-down",
+      "enabled": true,
+      "before": true
+    },
+    {
+      "do": "expectIncident",
+      "elementId": "Task_ChargeBackup"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "07-operate-incident-L2-07"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-incident",
+      "name": "08-operate-incident-detail-L2-07"
+    },
+    {
+      "do": "fault",
+      "name": "backup-payment-down",
+      "enabled": false
+    },
+    {
+      "do": "fault",
+      "name": "primary-payment-down",
+      "enabled": false
+    },
+    {
+      "do": "retryIncident"
+    },
+    {
+      "do": "wait"
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "09-operate-recovered-L2-07"
+    }
+  ],
+  "reportVariables": [
+    "orderValid",
+    "validationErrors",
+    "customerCategory",
+    "stockStatus",
+    "stockSource",
+    "warehouse",
+    "primaryWarehouseAvailable",
+    "secondaryWarehouseAvailable",
+    "reservationId",
+    "reservationStatus",
+    "orderTotal",
+    "deliveryPriority",
+    "slaHours",
+    "verificationDecision",
+    "paymentProvider",
+    "paymentFallbackUsed",
+    "primaryPaymentError",
+    "paymentStatus",
+    "transactionId",
+    "declineReason",
+    "paymentAttempts",
+    "carrierUsed",
+    "carrier",
+    "shipmentId",
+    "trackingNumber"
+  ]
+}

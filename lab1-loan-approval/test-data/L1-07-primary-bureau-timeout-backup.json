@@ -1,0 +1,61 @@
+{
+  "id": "L1-07",
+  "title": "Primary bureau times out (8 s > 5 s) -> backup bureau -> approved",
+  "category": "fallback",
+  "processId": "loan-approval",
+  "app": "http://localhost:8081",
+  "expected": {
+    "endEvent": "EndEvent_LoanDisbursed",
+    "route": "primary bureau timeout (HTTP 408) -> backup bureau 726 -> DMN LD-5 -> offer accepted -> disbursed"
+  },
+  "variables": {
+    "applicationId": "LA-07-${RUN}",
+    "applicantId": "APP-TIMEOUT",
+    "fullName": "Synthetic Applicant Golf",
+    "email": "synthetic.applicant.golf@example.org",
+    "age": 35,
+    "employmentStatus": "EMPLOYED",
+    "monthlyIncome": 6900,
+    "monthlyDebtPayments": 300,
+    "loanAmount": 22000,
+    "loanTermMonths": 48,
+    "loanPurpose": "Car purchase"
+  },
+  "steps": [
+    {
+      "do": "publishMessage",
+      "name": "loan-offer-response",
+      "correlationKey": "LA-07-${RUN}",
+      "waitForElement": "Task_WaitForOfferResponse",
+      "variables": {
+        "offerAccepted": true
+      }
+    },
+    {
+      "do": "wait"
+    }
+  ],
+  "reportVariables": [
+    "applicationComplete",
+    "applicantEligible",
+    "validationErrors",
+    "eligibilityIssues",
+    "identityVerified",
+    "creditCheckStatus",
+    "creditBureauUsed",
+    "creditScore",
+    "creditRiskBand",
+    "primaryBureauError",
+    "creditCheckError",
+    "debtToIncomeRatio",
+    "loanToIncomeRatio",
+    "loanDecision",
+    "finalDecision",
+    "decisionSource",
+    "decisionReason",
+    "offerId",
+    "interestRate",
+    "offerAccepted",
+    "disbursementReference"
+  ]
+}

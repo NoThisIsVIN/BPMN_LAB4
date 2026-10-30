@@ -1,0 +1,62 @@
+{
+  "id": "L3-11",
+  "title": "Patient never confirms → reminder timer → timeout timer → slot released",
+  "category": "timeout",
+  "processId": "patient-appointment-triage",
+  "app": "http://localhost:8083",
+  "expected": {
+    "endEvent": "EndEvent_SlotReleased",
+    "route": "booked → reminder after 5 s (non-interrupting) → no reply → timeout after 15 s → release slot → notify"
+  },
+  "variables": {
+    "patientReference": "SYN-P-0111",
+    "patientAge": 31,
+    "appointmentPreference": {
+      "department": "ORTHOPAEDICS",
+      "preferredDate": "2026-11-03",
+      "timeOfDay": "ANY"
+    },
+    "symptomsSummary": "Stiff shoulder after sport",
+    "painLevel": 3,
+    "symptomDurationDays": 6,
+    "confirmationReminderAfter": "PT5S",
+    "confirmationTimeout": "PT15S"
+  },
+  "steps": [
+    {
+      "do": "waitForElement",
+      "elementId": "EndEvent_ReminderSent",
+      "state": "COMPLETED",
+      "timeout": 90
+    },
+    {
+      "do": "waitForElement",
+      "elementId": "EndEvent_SlotReleased",
+      "state": "COMPLETED",
+      "timeout": 90
+    },
+    {
+      "do": "screenshot",
+      "view": "operate-instance",
+      "name": "04-operate-instance-L3-11-not-confirmed"
+    }
+  ],
+  "reportVariables": [
+    "urgencyCategory",
+    "triageReason",
+    "maxWaitDays",
+    "registrationErrors",
+    "reviewOutcome",
+    "assessmentOutcome",
+    "schedulingOutcome",
+    "searchSite",
+    "slotCount",
+    "firstAttemptConflicts",
+    "requeried",
+    "bookingStatus",
+    "bookingReference",
+    "bookingSite",
+    "appointmentSlot",
+    "patientConfirmation"
+  ]
+}

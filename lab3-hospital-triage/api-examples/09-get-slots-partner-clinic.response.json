@@ -1,0 +1,55 @@
+{
+    "availabilityRequestId": "AR-CD6A1F95",
+    "site": "PARTNER_CLINIC",
+    "department": "NEUROLOGY",
+    "fromDate": "2026-10-30",
+    "toDate": "2026-11-13",
+    "timeOfDay": "ANY",
+    "slots": [
+        {
+            "slotId": "PC-NEU-20261030-0800",
+            "site": "PARTNER_CLINIC",
+            "department": "NEUROLOGY",
+            "date": "2026-10-30",
+            "time": "08:00",
+            "clinician": "Clinician A (synthetic)",
+            "location": "Partner clinic (synthetic), room 1"
+        },
+        {
+            "slotId": "PC-NEU-20261030-0900",
+            "site": "PARTNER_CLINIC",
+            "department": "NEUROLOGY",
+            "date": "2026-10-30",
+            "time": "09:00",
+            "clinician": "Clinician B (synthetic)",
+            "location": "Partner clinic (synthetic), room 2"
+        },
+        {
+            "slotId": "PC-NEU-20261030-1000",
+            "site": "PARTNER_CLINIC",
+            "department": "NEUROLOGY",
+            "date": "2026-10-30",
+            "time": "10:00",
+            "clinician": "Clinician C (synthetic)",
+            "location": "Partner clinic (synthetic), room 3"
+        },
+        {
+            "slotId": "PC-NEU-20261030-1100",
+            "site": "PARTNER_CLINIC",
+            "department": "NEUROLOGY",
+            "date": "2026-10-30",
+            "time": "11:00",
+            "clinician": "Clinician D (synthetic)",
+            "location": "Partner clinic (synthetic), room 4"
+        },
+        {
+            "slotId": "PC-NEU-20261030-1300",
+            "site": "PARTNER_CLINIC",
+            "department": "NEUROLOGY",
+            "date": "2026-10-30",
+            "time": "13:00",
+            "clinician": "Clinician A (synthetic)",
+            "location": "Partner clinic (synthetic), room 1"
+        }
+    ]
+}

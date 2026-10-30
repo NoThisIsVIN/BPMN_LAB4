@@ -1,0 +1,24 @@
+{
+  "note": "Fault primary-payment-down on: HTTP 503. The connector's error expression maps it to BPMN error PAYMENT_PROVIDER_DOWN -> backup provider.",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8082/mock/payment-gateway/primary/charges",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "orderId": "ORD-API-3",
+      "amount": 409.79,
+      "currency": "EUR",
+      "paymentToken": "tok_test_approve",
+      "customerReference": "CUST-0001"
+    }
+  },
+  "response": {
+    "status": 503,
+    "body": {
+      "error": "Primary payment provider temporarily unavailable",
+      "status": 503
+    }
+  }
+}

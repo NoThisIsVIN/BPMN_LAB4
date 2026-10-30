@@ -4,12 +4,14 @@
     <bpmn:participant id="Participant_patient-appointment-triage" name="Hospital Appointment &amp; Patient Triage (synthetic educational scenario)" processRef="patient-appointment-triage" />
   </bpmn:collaboration>
   <bpmn:process id="patient-appointment-triage" name="Patient Appointment &amp; Triage" isExecutable="true">
-    <bpmn:documentation>Registers a synthetic appointment request, classifies it with educational triage rules (DMN), routes priority/urgent cases to clinical staff in Tasklist, retrieves slots from a mock scheduling API via the REST Connector and books an appointment. Not clinical guidance; synthetic data only.</bpmn:documentation>
+    <bpmn:documentation>Registers a synthetic appointment request, classifies it with educational triage rules (DMN), routes priority/urgent cases to clinical staff in Tasklist, retrieves slots from a mock scheduling API via the REST Connector (falling back to a partner clinic and re-querying when a slot is taken), books the appointment and waits for the patient's confirmation. Not clinical guidance; synthetic data only.</bpmn:documentation>
     <bpmn:extensionElements>
-      <zeebe:versionTag value="1.0.0" />
+      <zeebe:versionTag value="2.0.0" />
     </bpmn:extensionElements>
     <bpmn:laneSet id="LaneSet_patient-appointment-triage">
       <bpmn:lane id="Lane_SchedulingStaff" name="Scheduling staff">
+        <bpmn:flowNodeRef>Gateway_JoinStaffNoSlot</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_JoinStaffTaken</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_ResolveScheduling</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_SchedulingOutcome</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_NotifyWaitlisted</bpmn:flowNodeRef>
@@ -27,12 +29,29 @@
         <bpmn:flowNodeRef>Task_RequestAvailability</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_RetrieveSlots</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_SlotAvailable</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_JoinSlotFound</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_BookAppointment</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Boundary_SlotTaken</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_JoinBooked</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_SendConfirmation</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>EndEvent_AppointmentBooked</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_JoinManualSlot</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AskConfirmation</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_WaitForConfirmation</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Boundary_ConfirmationReminder</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Boundary_ConfirmationTimeout</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_AppointmentConfirmed</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_RequestMissingDetails</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>EndEvent_RequestIncomplete</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SearchPartnerClinic</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_PartnerSlot</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RequerySlots</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_FreeSlotFound</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_BookRequeriedSlot</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Boundary_SlotTakenAgain</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SendReminder</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_ReminderSent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ReleaseSlot</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_NotifyReleased</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_SlotReleased</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_ClinicalStaff" name="Clinical staff">
         <bpmn:flowNodeRef>Task_PriorityReview</bpmn:flowNodeRef>
@@ -48,11 +67,11 @@
       </bpmn:lane>
     </bpmn:laneSet>
     <bpmn:startEvent id="StartEvent_RequestReceived" name="Appointment request received">
-      <bpmn:documentation>Variables: patientReference (SYN-P-####), patientAge, appointmentPreference {department, preferredDate, timeOfDay}, symptomsSummary, painLevel, chestPain, breathingDifficulty, highFever, symptomDurationDays, chronicCondition.</bpmn:documentation>
+      <bpmn:documentation>Variables: patientReference (SYN-P-####), patientAge, appointmentPreference {department, preferredDate, timeOfDay}, symptomsSummary, painLevel, chestPain, breathingDifficulty, highFever, symptomDurationDays, chronicCondition. Optional timer overrides: urgentEscalationAfter, confirmationReminderAfter, confirmationTimeout (ISO-8601 durations).</bpmn:documentation>
       <bpmn:outgoing>Flow_Start_Validate</bpmn:outgoing>
     </bpmn:startEvent>
     <bpmn:serviceTask id="Task_ValidateRegistration" name="Validate registration">
-      <bpmn:documentation>Java job worker. Checks mandatory registration fields and value ranges, normalises urgency indicators (missing flags -&gt; false) and flattens the appointment preference. Outputs registrationValid, registrationErrors, department, preferredDate, timeOfDay.</bpmn:documentation>
+      <bpmn:documentation>Java job worker. Checks mandatory registration fields and value ranges, normalises urgency indicators (missing flags -&gt; false), flattens the appointment preference and sets the timer defaults (PT15M / PT12H / PT24H) when they were not supplied. Outputs registrationValid, registrationErrors, department, preferredDate, timeOfDay.</bpmn:documentation>
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="triage.validate-registration" retries="3" />
       </bpmn:extensionElements>
@@ -107,7 +126,7 @@
       <bpmn:outgoing>Flow_Request_Slots</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:serviceTask id="Task_RetrieveSlots" name="Retrieve available slots" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12">
-      <bpmn:documentation>REST Outbound Connector -&gt; GET /mock/scheduling/availability-requests/{id}/slots. No error expression: an outage (HTTP 503) is retried 3x with 5 s back-off and then raises an incident.</bpmn:documentation>
+      <bpmn:documentation>REST Outbound Connector -&gt; GET /mock/scheduling/availability-requests/{id}/slots?site=MAIN_HOSPITAL. No error expression: an outage (HTTP 503) is retried 3x with 5 s back-off and then raises an incident.</bpmn:documentation>
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
@@ -117,45 +136,83 @@
         <zeebe:input source='={"Content-Type": "application/json", "Accept": "application/json"}' target="headers" />
         <zeebe:input source="5" target="connectionTimeoutInSeconds" />
         <zeebe:input source="10" target="readTimeoutInSeconds" />
+        <zeebe:input source='={site: "MAIN_HOSPITAL"}' target="queryParameters" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
         <zeebe:header key="retryBackoff" value="PT5S" />
-        <zeebe:header key="resultExpression" value="={availableSlots: response.body.slots, slotCount: count(response.body.slots)}" />
+        <zeebe:header key="resultExpression" value='={availableSlots: response.body.slots, slotCount: count(response.body.slots), searchSite: "MAIN_HOSPITAL"}' />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Request_Slots</bpmn:incoming>
       <bpmn:outgoing>Flow_Slots_Gw</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Gateway_SlotAvailable" name="Suitable slot available?" default="Flow_Slot_No">
+    <bpmn:exclusiveGateway id="Gateway_SlotAvailable" name="Slot at main hospital?" default="Flow_Slot_No">
       <bpmn:incoming>Flow_Slots_Gw</bpmn:incoming>
       <bpmn:outgoing>Flow_Slot_Yes</bpmn:outgoing>
       <bpmn:outgoing>Flow_Slot_No</bpmn:outgoing>
     </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Gateway_JoinSlotFound">
+      <bpmn:incoming>Flow_Slot_Yes</bpmn:incoming>
+      <bpmn:incoming>Flow_Partner_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_JoinSlotFound_Book</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
     <bpmn:serviceTask id="Task_BookAppointment" name="Book appointment">
-      <bpmn:documentation>Java job worker. Books the first available slot through the mock scheduling API. Outputs bookingStatus, bookingReference, appointmentSlot.</bpmn:documentation>
+      <bpmn:documentation>Java job worker. Books the earliest retrieved slot (main hospital or partner clinic). If every retrieved slot was taken by someone else in the meantime (HTTP 409) it throws BPMN error SLOT_TAKEN. Outputs bookingStatus, bookingReference, appointmentSlot, bookingSite.</bpmn:documentation>
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="triage.book-appointment" retries="3" />
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_Slot_Yes</bpmn:incoming>
+      <bpmn:incoming>Flow_JoinSlotFound_Book</bpmn:incoming>
       <bpmn:outgoing>Flow_Book_JoinBooked</bpmn:outgoing>
     </bpmn:serviceTask>
+    <bpmn:boundaryEvent id="Boundary_SlotTaken" name="Slot taken meanwhile" attachedToRef="Task_BookAppointment">
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+        <zeebe:output source="=slotConflicts" target="firstAttemptConflicts" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_SlotTaken_Requery</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="Boundary_SlotTaken_def" errorRef="Error_SlotTaken" />
+    </bpmn:boundaryEvent>
     <bpmn:exclusiveGateway id="Gateway_JoinBooked">
       <bpmn:incoming>Flow_Book_JoinBooked</bpmn:incoming>
-      <bpmn:incoming>Flow_Scheduling_Manual</bpmn:incoming>
-      <bpmn:outgoing>Flow_JoinBooked_Confirm</bpmn:outgoing>
+      <bpmn:incoming>Flow_Requeried_JoinBooked</bpmn:incoming>
+      <bpmn:outgoing>Flow_JoinBooked_JoinManual</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sendTask id="Task_SendConfirmation" name="Send appointment confirmation">
+    <bpmn:exclusiveGateway id="Gateway_JoinManualSlot">
+      <bpmn:incoming>Flow_Scheduling_Manual</bpmn:incoming>
+      <bpmn:incoming>Flow_JoinBooked_JoinManual</bpmn:incoming>
+      <bpmn:outgoing>Flow_JoinManual_Ask</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sendTask id="Task_AskConfirmation" name="Ask patient to confirm appointment">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="triage.notify-patient" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="template" value="APPOINTMENT_CONFIRMED" />
+        <zeebe:header key="template" value="CONFIRMATION_REQUEST" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_JoinBooked_Confirm</bpmn:incoming>
-      <bpmn:outgoing>Flow_Confirm_End</bpmn:outgoing>
+      <bpmn:incoming>Flow_JoinManual_Ask</bpmn:incoming>
+      <bpmn:outgoing>Flow_Ask_Wait</bpmn:outgoing>
     </bpmn:sendTask>
-    <bpmn:endEvent id="EndEvent_AppointmentBooked" name="Appointment booked">
-      <bpmn:incoming>Flow_Confirm_End</bpmn:incoming>
+    <bpmn:receiveTask id="Task_WaitForConfirmation" name="Wait for patient confirmation" messageRef="Message_AppointmentConfirmed">
+      <bpmn:documentation>Receive task: waits for message 'appointment-confirmed' correlated by patientReference.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+        <zeebe:output source="=&quot;CONFIRMED&quot;" target="patientConfirmation" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Ask_Wait</bpmn:incoming>
+      <bpmn:outgoing>Flow_Wait_End</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:boundaryEvent id="Boundary_ConfirmationReminder" name="Reminder due" attachedToRef="Task_WaitForConfirmation" cancelActivity="false">
+      <bpmn:outgoing>Flow_Reminder_Send</bpmn:outgoing>
+      <bpmn:timerEventDefinition><bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=confirmationReminderAfter</bpmn:timeDuration></bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Boundary_ConfirmationTimeout" name="Not confirmed in time" attachedToRef="Task_WaitForConfirmation">
+      <bpmn:outgoing>Flow_Timeout_Release</bpmn:outgoing>
+      <bpmn:timerEventDefinition><bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=confirmationTimeout</bpmn:timeDuration></bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:endEvent id="EndEvent_AppointmentConfirmed" name="Appointment booked and confirmed">
+      <bpmn:incoming>Flow_Wait_End</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sendTask id="Task_RequestMissingDetails" name="Request missing details">
       <bpmn:extensionElements>
@@ -169,6 +226,104 @@
     </bpmn:sendTask>
     <bpmn:endEvent id="EndEvent_RequestIncomplete" name="Request returned – incomplete">
       <bpmn:incoming>Flow_Missing_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_SearchPartnerClinic" name="Search partner clinic" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12">
+      <bpmn:documentation>REST Outbound Connector -&gt; same availability request, site=PARTNER_CLINIC. Used only when the main hospital has no suitable slot.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+        <zeebe:input source="noAuth" target="authentication.type" />
+        <zeebe:input source="GET" target="method" />
+        <zeebe:input source='="http://localhost:8083/mock/scheduling/availability-requests/" + availabilityRequestId + "/slots"' target="url" />
+        <zeebe:input source='={"Content-Type": "application/json", "Accept": "application/json"}' target="headers" />
+        <zeebe:input source="5" target="connectionTimeoutInSeconds" />
+        <zeebe:input source="10" target="readTimeoutInSeconds" />
+        <zeebe:input source='={site: "PARTNER_CLINIC"}' target="queryParameters" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+        <zeebe:header key="retryBackoff" value="PT5S" />
+        <zeebe:header key="resultExpression" value='={availableSlots: response.body.slots, slotCount: count(response.body.slots), searchSite: "PARTNER_CLINIC"}' />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Slot_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_Partner_Gw</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_PartnerSlot" name="Partner slot available?" default="Flow_Partner_No">
+      <bpmn:incoming>Flow_Partner_Gw</bpmn:incoming>
+      <bpmn:outgoing>Flow_Partner_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Partner_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_RequerySlots" name="Re-query available slots" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12">
+      <bpmn:documentation>REST Outbound Connector -&gt; fresh slot list for the same site after a booking conflict.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+        <zeebe:input source="noAuth" target="authentication.type" />
+        <zeebe:input source="GET" target="method" />
+        <zeebe:input source='="http://localhost:8083/mock/scheduling/availability-requests/" + availabilityRequestId + "/slots"' target="url" />
+        <zeebe:input source='={"Content-Type": "application/json", "Accept": "application/json"}' target="headers" />
+        <zeebe:input source="5" target="connectionTimeoutInSeconds" />
+        <zeebe:input source="10" target="readTimeoutInSeconds" />
+        <zeebe:input source="={site: searchSite}" target="queryParameters" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+        <zeebe:header key="retryBackoff" value="PT5S" />
+        <zeebe:header key="resultExpression" value="={availableSlots: response.body.slots, slotCount: count(response.body.slots), searchSite: searchSite, requeried: true}" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_SlotTaken_Requery</bpmn:incoming>
+      <bpmn:outgoing>Flow_Requery_Gw</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_FreeSlotFound" name="Free slot found?" default="Flow_Free_No">
+      <bpmn:incoming>Flow_Requery_Gw</bpmn:incoming>
+      <bpmn:outgoing>Flow_Free_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Free_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_BookRequeriedSlot" name="Book re-queried slot">
+      <bpmn:documentation>Same Java job worker as 'Book appointment' (second and last automatic attempt).</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="triage.book-appointment" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Free_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_Requeried_JoinBooked</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:boundaryEvent id="Boundary_SlotTakenAgain" name="Taken again" attachedToRef="Task_BookRequeriedSlot">
+      <bpmn:outgoing>Flow_TakenAgain_Staff</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="Boundary_SlotTakenAgain_def" errorRef="Error_SlotTaken" />
+    </bpmn:boundaryEvent>
+    <bpmn:sendTask id="Task_SendReminder" name="Send confirmation reminder">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="triage.notify-patient" retries="3" />
+        <zeebe:taskHeaders>
+        <zeebe:header key="template" value="CONFIRMATION_REMINDER" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Reminder_Send</bpmn:incoming>
+      <bpmn:outgoing>Flow_Reminder_End</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="EndEvent_ReminderSent" name="Reminder sent">
+      <bpmn:incoming>Flow_Reminder_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_ReleaseSlot" name="Release appointment slot">
+      <bpmn:documentation>Java job worker. Cancels the unconfirmed booking in the scheduling system so the slot becomes free for other patients.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="triage.release-slot" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Timeout_Release</bpmn:incoming>
+      <bpmn:outgoing>Flow_Release_Notify</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sendTask id="Task_NotifyReleased" name="Notify patient: slot released">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="triage.notify-patient" retries="3" />
+        <zeebe:taskHeaders>
+        <zeebe:header key="template" value="SLOT_RELEASED" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Release_Notify</bpmn:incoming>
+      <bpmn:outgoing>Flow_Released_End</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="EndEvent_SlotReleased" name="Slot released – not confirmed">
+      <bpmn:incoming>Flow_Released_End</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:userTask id="Task_PriorityReview" name="Priority staff review">
       <bpmn:documentation>Camunda user task, candidate group clinical-staff. Form: priority-review-form.</bpmn:documentation>
@@ -212,9 +367,9 @@
       <bpmn:incoming>Flow_JoinAssessment_Task</bpmn:incoming>
       <bpmn:outgoing>Flow_Assessment_Gw</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:boundaryEvent id="Boundary_NotPickedUp" name="Not picked up in 15 min" attachedToRef="Task_UrgentAssessment" cancelActivity="false">
+    <bpmn:boundaryEvent id="Boundary_NotPickedUp" name="Not picked up in time" attachedToRef="Task_UrgentAssessment" cancelActivity="false">
       <bpmn:outgoing>Flow_Timer_Escalate</bpmn:outgoing>
-      <bpmn:timerEventDefinition><bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT15M</bpmn:timeDuration></bpmn:timerEventDefinition>
+      <bpmn:timerEventDefinition><bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=urgentEscalationAfter</bpmn:timeDuration></bpmn:timerEventDefinition>
     </bpmn:boundaryEvent>
     <bpmn:exclusiveGateway id="Gateway_AssessmentOutcome" name="Assessment outcome?" default="Flow_Assessment_ED">
       <bpmn:incoming>Flow_Assessment_Gw</bpmn:incoming>
@@ -247,8 +402,18 @@
     <bpmn:endEvent id="EndEvent_DutyManagerAlerted" name="Duty manager alerted">
       <bpmn:incoming>Flow_Escalate_End</bpmn:incoming>
     </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_JoinStaffNoSlot">
+      <bpmn:incoming>Flow_Partner_No</bpmn:incoming>
+      <bpmn:incoming>Flow_Free_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_JoinStaffNoSlot_Taken</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Gateway_JoinStaffTaken">
+      <bpmn:incoming>Flow_TakenAgain_Staff</bpmn:incoming>
+      <bpmn:incoming>Flow_JoinStaffNoSlot_Taken</bpmn:incoming>
+      <bpmn:outgoing>Flow_JoinStaffTaken_Resolve</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
     <bpmn:userTask id="Task_ResolveScheduling" name="Resolve scheduling – no suitable slot">
-      <bpmn:documentation>Camunda user task, candidate group scheduling-staff. Form: scheduling-resolution-form.</bpmn:documentation>
+      <bpmn:documentation>Camunda user task, candidate group scheduling-staff. Reached when neither the main hospital nor the partner clinic has a slot, or when the re-queried slot was taken too. Form: scheduling-resolution-form.</bpmn:documentation>
       <bpmn:extensionElements>
         <zeebe:userTask />
         <zeebe:formDefinition formId="scheduling-resolution-form" />
@@ -262,7 +427,7 @@
         <zeebe:output source='=if schedulingOutcome = "MANUAL_SLOT" then manualSlot else null' target="appointmentSlot" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_Slot_No</bpmn:incoming>
+      <bpmn:incoming>Flow_JoinStaffTaken_Resolve</bpmn:incoming>
       <bpmn:outgoing>Flow_Resolve_Gw</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:exclusiveGateway id="Gateway_SchedulingOutcome" name="Scheduling outcome?" default="Flow_Scheduling_Waitlist">
@@ -317,19 +482,42 @@
     <bpmn:sequenceFlow id="Flow_JoinUrgent_Request" sourceRef="Gateway_JoinUrgent" targetRef="Task_RequestAvailability" />
     <bpmn:sequenceFlow id="Flow_Request_Slots" sourceRef="Task_RequestAvailability" targetRef="Task_RetrieveSlots" />
     <bpmn:sequenceFlow id="Flow_Slots_Gw" sourceRef="Task_RetrieveSlots" targetRef="Gateway_SlotAvailable" />
-    <bpmn:sequenceFlow id="Flow_Slot_Yes" sourceRef="Gateway_SlotAvailable" targetRef="Task_BookAppointment" name="Yes">
+    <bpmn:sequenceFlow id="Flow_Slot_Yes" sourceRef="Gateway_SlotAvailable" targetRef="Gateway_JoinSlotFound" name="Yes">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=slotCount &gt; 0</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Slot_No" sourceRef="Gateway_SlotAvailable" targetRef="Task_ResolveScheduling" name="No" />
+    <bpmn:sequenceFlow id="Flow_Slot_No" sourceRef="Gateway_SlotAvailable" targetRef="Task_SearchPartnerClinic" name="No" />
+    <bpmn:sequenceFlow id="Flow_Partner_Gw" sourceRef="Task_SearchPartnerClinic" targetRef="Gateway_PartnerSlot" />
+    <bpmn:sequenceFlow id="Flow_Partner_Yes" sourceRef="Gateway_PartnerSlot" targetRef="Gateway_JoinSlotFound" name="Yes">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=slotCount &gt; 0</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Partner_No" sourceRef="Gateway_PartnerSlot" targetRef="Gateway_JoinStaffNoSlot" name="No" />
+    <bpmn:sequenceFlow id="Flow_JoinSlotFound_Book" sourceRef="Gateway_JoinSlotFound" targetRef="Task_BookAppointment" />
     <bpmn:sequenceFlow id="Flow_Book_JoinBooked" sourceRef="Task_BookAppointment" targetRef="Gateway_JoinBooked" />
+    <bpmn:sequenceFlow id="Flow_SlotTaken_Requery" sourceRef="Boundary_SlotTaken" targetRef="Task_RequerySlots" />
+    <bpmn:sequenceFlow id="Flow_Requery_Gw" sourceRef="Task_RequerySlots" targetRef="Gateway_FreeSlotFound" />
+    <bpmn:sequenceFlow id="Flow_Free_Yes" sourceRef="Gateway_FreeSlotFound" targetRef="Task_BookRequeriedSlot" name="Yes">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=slotCount &gt; 0</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Free_No" sourceRef="Gateway_FreeSlotFound" targetRef="Gateway_JoinStaffNoSlot" name="No" />
+    <bpmn:sequenceFlow id="Flow_Requeried_JoinBooked" sourceRef="Task_BookRequeriedSlot" targetRef="Gateway_JoinBooked" />
+    <bpmn:sequenceFlow id="Flow_TakenAgain_Staff" sourceRef="Boundary_SlotTakenAgain" targetRef="Gateway_JoinStaffTaken" />
+    <bpmn:sequenceFlow id="Flow_JoinStaffNoSlot_Taken" sourceRef="Gateway_JoinStaffNoSlot" targetRef="Gateway_JoinStaffTaken" />
+    <bpmn:sequenceFlow id="Flow_JoinStaffTaken_Resolve" sourceRef="Gateway_JoinStaffTaken" targetRef="Task_ResolveScheduling" />
     <bpmn:sequenceFlow id="Flow_Resolve_Gw" sourceRef="Task_ResolveScheduling" targetRef="Gateway_SchedulingOutcome" />
-    <bpmn:sequenceFlow id="Flow_Scheduling_Manual" sourceRef="Gateway_SchedulingOutcome" targetRef="Gateway_JoinBooked" name="Manual slot">
+    <bpmn:sequenceFlow id="Flow_Scheduling_Manual" sourceRef="Gateway_SchedulingOutcome" targetRef="Gateway_JoinManualSlot" name="Manual slot">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=schedulingOutcome = "MANUAL_SLOT"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_Scheduling_Waitlist" sourceRef="Gateway_SchedulingOutcome" targetRef="Task_NotifyWaitlisted" name="Waiting list" />
     <bpmn:sequenceFlow id="Flow_Waitlist_End" sourceRef="Task_NotifyWaitlisted" targetRef="EndEvent_Waitlisted" />
-    <bpmn:sequenceFlow id="Flow_JoinBooked_Confirm" sourceRef="Gateway_JoinBooked" targetRef="Task_SendConfirmation" />
-    <bpmn:sequenceFlow id="Flow_Confirm_End" sourceRef="Task_SendConfirmation" targetRef="EndEvent_AppointmentBooked" />
+    <bpmn:sequenceFlow id="Flow_JoinBooked_JoinManual" sourceRef="Gateway_JoinBooked" targetRef="Gateway_JoinManualSlot" />
+    <bpmn:sequenceFlow id="Flow_JoinManual_Ask" sourceRef="Gateway_JoinManualSlot" targetRef="Task_AskConfirmation" />
+    <bpmn:sequenceFlow id="Flow_Ask_Wait" sourceRef="Task_AskConfirmation" targetRef="Task_WaitForConfirmation" />
+    <bpmn:sequenceFlow id="Flow_Wait_End" sourceRef="Task_WaitForConfirmation" targetRef="EndEvent_AppointmentConfirmed" />
+    <bpmn:sequenceFlow id="Flow_Reminder_Send" sourceRef="Boundary_ConfirmationReminder" targetRef="Task_SendReminder" />
+    <bpmn:sequenceFlow id="Flow_Reminder_End" sourceRef="Task_SendReminder" targetRef="EndEvent_ReminderSent" />
+    <bpmn:sequenceFlow id="Flow_Timeout_Release" sourceRef="Boundary_ConfirmationTimeout" targetRef="Task_ReleaseSlot" />
+    <bpmn:sequenceFlow id="Flow_Release_Notify" sourceRef="Task_ReleaseSlot" targetRef="Task_NotifyReleased" />
+    <bpmn:sequenceFlow id="Flow_Released_End" sourceRef="Task_NotifyReleased" targetRef="EndEvent_SlotReleased" />
     <bpmn:textAnnotation id="Annotation_DmnRules">
       <bpmn:text>DMN triage-category (FIRST hit):
 • chest pain / breathing difficulty / pain ≥ 8 → Urgent
@@ -337,14 +525,25 @@
 • pain 5–7 or symptoms &gt; 14 days → Priority review
 • otherwise → Routine (max wait 14 days)</bpmn:text>
     </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="Annotation_Disclaimer">
+      <bpmn:text>Educational rules only – not clinical guidance.
+All patient data is synthetic (SYN-P-####).</bpmn:text>
+    </bpmn:textAnnotation>
     <bpmn:textAnnotation id="Annotation_SchedulingOutage">
       <bpmn:text>Scheduling API outage (HTTP 503)
 → 3 retries, 5 s back-off
 → incident in Operate → fix → retry</bpmn:text>
     </bpmn:textAnnotation>
-    <bpmn:textAnnotation id="Annotation_Disclaimer">
-      <bpmn:text>Educational rules only – not clinical guidance.
-All patient data is synthetic (SYN-P-####).</bpmn:text>
+    <bpmn:textAnnotation id="Annotation_Fallbacks">
+      <bpmn:text>Fallbacks before a human is involved:
+1. main hospital full → partner clinic
+2. slot taken while booking → re-query once
+3. still nothing → scheduling staff</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="Annotation_Timers">
+      <bpmn:text>Timer durations are process variables
+(defaults: escalation 15 min, reminder 12 h,
+confirmation timeout 24 h)</bpmn:text>
     </bpmn:textAnnotation>
     <bpmn:textAnnotation id="Annotation_Legend">
       <bpmn:text>Legend
@@ -352,22 +551,29 @@ green task = Java job worker
 blue task = REST connector
 purple task = DMN decision
 orange task = human task (Tasklist)
+teal task = waiting for the patient
 grey task = notification</bpmn:text>
     </bpmn:textAnnotation>
   </bpmn:process>
+  <bpmn:error id="Error_SlotTaken" name="Slot taken while booking" errorCode="SLOT_TAKEN" />
+  <bpmn:message id="Message_AppointmentConfirmed" name="appointment-confirmed">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=patientReference" />
+    </bpmn:extensionElements>
+  </bpmn:message>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_patient-appointment-triage">
       <bpmndi:BPMNShape id="Participant_patient-appointment-triage_di" bpmnElement="Participant_patient-appointment-triage" isHorizontal="true">
-        <dc:Bounds x="160" y="80" width="2788" height="720" />
+        <dc:Bounds x="160" y="80" width="4128" height="960" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_SchedulingStaff_di" bpmnElement="Lane_SchedulingStaff" isHorizontal="true">
-        <dc:Bounds x="190" y="80" width="2758" height="120" />
+        <dc:Bounds x="190" y="80" width="4098" height="120" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_AppointmentSystem_di" bpmnElement="Lane_AppointmentSystem" isHorizontal="true">
-        <dc:Bounds x="190" y="200" width="2758" height="240" />
+        <dc:Bounds x="190" y="200" width="4098" height="480" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_ClinicalStaff_di" bpmnElement="Lane_ClinicalStaff" isHorizontal="true">
-        <dc:Bounds x="190" y="440" width="2758" height="360" />
+        <dc:Bounds x="190" y="680" width="4098" height="360" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="StartEvent_RequestReceived_di" bpmnElement="StartEvent_RequestReceived" bioc:stroke="#2e7d32" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#2e7d32">
         <dc:Bounds x="272" y="362" width="36" height="36" />
@@ -376,325 +582,506 @@ grey task = notification</bpmn:text>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_ValidateRegistration_di" bpmnElement="Task_ValidateRegistration" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
-        <dc:Bounds x="400" y="340" width="100" height="80" />
+        <dc:Bounds x="390" y="340" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_RegistrationComplete_di" bpmnElement="Gateway_RegistrationComplete" isMarkerVisible="true">
-        <dc:Bounds x="585" y="355" width="50" height="50" />
+        <dc:Bounds x="565" y="355" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="555" y="411" width="110" height="28" />
+          <dc:Bounds x="535" y="411" width="110" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_ClassifyTriage_di" bpmnElement="Task_ClassifyTriage" bioc:stroke="#6a1b9a" bioc:fill="#e1bee7" color:background-color="#e1bee7" color:border-color="#6a1b9a">
-        <dc:Bounds x="720" y="340" width="100" height="80" />
+        <dc:Bounds x="690" y="340" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_UrgentNeeded_di" bpmnElement="Gateway_UrgentNeeded" isMarkerVisible="true">
-        <dc:Bounds x="905" y="355" width="50" height="50" />
+        <dc:Bounds x="865" y="355" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="880" y="307" width="100" height="42" />
+          <dc:Bounds x="840" y="307" width="100" height="42" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_PriorityNeeded_di" bpmnElement="Gateway_PriorityNeeded" isMarkerVisible="true">
-        <dc:Bounds x="1065" y="355" width="50" height="50" />
+        <dc:Bounds x="1015" y="355" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1040" y="321" width="100" height="28" />
+          <dc:Bounds x="990" y="321" width="100" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_JoinPriority_di" bpmnElement="Gateway_JoinPriority" isMarkerVisible="true">
-        <dc:Bounds x="1545" y="355" width="50" height="50" />
+        <dc:Bounds x="1465" y="355" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_JoinUrgent_di" bpmnElement="Gateway_JoinUrgent" isMarkerVisible="true">
-        <dc:Bounds x="1705" y="355" width="50" height="50" />
+        <dc:Bounds x="1615" y="355" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_RequestAvailability_di" bpmnElement="Task_RequestAvailability" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
-        <dc:Bounds x="1840" y="340" width="100" height="80" />
+        <dc:Bounds x="1740" y="340" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_RetrieveSlots_di" bpmnElement="Task_RetrieveSlots" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
-        <dc:Bounds x="2000" y="340" width="100" height="80" />
+        <dc:Bounds x="1890" y="340" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_SlotAvailable_di" bpmnElement="Gateway_SlotAvailable" isMarkerVisible="true">
-        <dc:Bounds x="2185" y="355" width="50" height="50" />
+        <dc:Bounds x="2065" y="355" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2160" y="411" width="100" height="28" />
+          <dc:Bounds x="2040" y="411" width="100" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_JoinSlotFound_di" bpmnElement="Gateway_JoinSlotFound" isMarkerVisible="true">
+        <dc:Bounds x="2515" y="355" width="50" height="50" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_BookAppointment_di" bpmnElement="Task_BookAppointment" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
-        <dc:Bounds x="2320" y="340" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_JoinBooked_di" bpmnElement="Gateway_JoinBooked" isMarkerVisible="true">
-        <dc:Bounds x="2505" y="355" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_SendConfirmation_di" bpmnElement="Task_SendConfirmation" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
         <dc:Bounds x="2640" y="340" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_AppointmentBooked_di" bpmnElement="EndEvent_AppointmentBooked" bioc:stroke="#2e7d32" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#2e7d32">
-        <dc:Bounds x="2832" y="362" width="36" height="36" />
+      <bpmndi:BPMNShape id="Boundary_SlotTaken_di" bpmnElement="Boundary_SlotTaken" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
+        <dc:Bounds x="2672" y="322" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2795" y="404" width="110" height="28" />
+          <dc:Bounds x="2596" y="312" width="70" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_JoinBooked_di" bpmnElement="Gateway_JoinBooked" isMarkerVisible="true">
+        <dc:Bounds x="3265" y="355" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_JoinManualSlot_di" bpmnElement="Gateway_JoinManualSlot" isMarkerVisible="true">
+        <dc:Bounds x="3415" y="355" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AskConfirmation_di" bpmnElement="Task_AskConfirmation" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
+        <dc:Bounds x="3540" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_WaitForConfirmation_di" bpmnElement="Task_WaitForConfirmation" bioc:stroke="#00838f" bioc:fill="#e0f7fa" color:background-color="#e0f7fa" color:border-color="#00838f">
+        <dc:Bounds x="3690" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_ConfirmationReminder_di" bpmnElement="Boundary_ConfirmationReminder" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
+        <dc:Bounds x="3747" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3793" y="404" width="56" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_ConfirmationTimeout_di" bpmnElement="Boundary_ConfirmationTimeout" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
+        <dc:Bounds x="3697" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3621" y="423" width="70" height="42" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_AppointmentConfirmed_di" bpmnElement="EndEvent_AppointmentConfirmed" bioc:stroke="#2e7d32" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#2e7d32">
+        <dc:Bounds x="3872" y="362" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3835" y="314" width="110" height="42" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_RequestMissingDetails_di" bpmnElement="Task_RequestMissingDetails" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
-        <dc:Bounds x="720" y="220" width="100" height="80" />
+        <dc:Bounds x="690" y="220" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_RequestIncomplete_di" bpmnElement="EndEvent_RequestIncomplete" bioc:stroke="#c62828" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#c62828">
-        <dc:Bounds x="912" y="242" width="36" height="36" />
+        <dc:Bounds x="872" y="242" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="954" y="246" width="100" height="28" />
+          <dc:Bounds x="914" y="246" width="100" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SearchPartnerClinic_di" bpmnElement="Task_SearchPartnerClinic" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
+        <dc:Bounds x="2190" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_PartnerSlot_di" bpmnElement="Gateway_PartnerSlot" isMarkerVisible="true">
+        <dc:Bounds x="2365" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2310" y="291" width="100" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RequerySlots_di" bpmnElement="Task_RequerySlots" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
+        <dc:Bounds x="2790" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_FreeSlotFound_di" bpmnElement="Gateway_FreeSlotFound" isMarkerVisible="true">
+        <dc:Bounds x="2965" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2950" y="291" width="80" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_BookRequeriedSlot_di" bpmnElement="Task_BookRequeriedSlot" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
+        <dc:Bounds x="3090" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_SlotTakenAgain_di" bpmnElement="Boundary_SlotTakenAgain" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
+        <dc:Bounds x="3122" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3164" y="190" width="50" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SendReminder_di" bpmnElement="Task_SendReminder" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
+        <dc:Bounds x="3840" y="460" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_ReminderSent_di" bpmnElement="EndEvent_ReminderSent" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
+        <dc:Bounds x="4022" y="482" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3985" y="524" width="110" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ReleaseSlot_di" bpmnElement="Task_ReleaseSlot" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
+        <dc:Bounds x="3840" y="580" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyReleased_di" bpmnElement="Task_NotifyReleased" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
+        <dc:Bounds x="3990" y="580" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_SlotReleased_di" bpmnElement="EndEvent_SlotReleased" bioc:stroke="#c62828" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#c62828">
+        <dc:Bounds x="4172" y="602" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="4140" y="644" width="100" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_PriorityReview_di" bpmnElement="Task_PriorityReview" bioc:stroke="#e65100" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#e65100">
-        <dc:Bounds x="1200" y="460" width="100" height="80" />
+        <dc:Bounds x="1140" y="700" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_ReviewOutcome_di" bpmnElement="Gateway_ReviewOutcome" isMarkerVisible="true">
-        <dc:Bounds x="1385" y="475" width="50" height="50" />
+        <dc:Bounds x="1315" y="715" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1370" y="441" width="80" height="28" />
+          <dc:Bounds x="1300" y="681" width="80" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_JoinAssessment_di" bpmnElement="Gateway_JoinAssessment" isMarkerVisible="true">
-        <dc:Bounds x="1385" y="595" width="50" height="50" />
+        <dc:Bounds x="1315" y="835" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_UrgentAssessment_di" bpmnElement="Task_UrgentAssessment" bioc:stroke="#e65100" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#e65100">
-        <dc:Bounds x="1520" y="580" width="100" height="80" />
+        <dc:Bounds x="1440" y="820" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Boundary_NotPickedUp_di" bpmnElement="Boundary_NotPickedUp" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
-        <dc:Bounds x="1552" y="642" width="36" height="36" />
+        <dc:Bounds x="1472" y="882" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1594" y="676" width="80" height="28" />
+          <dc:Bounds x="1514" y="916" width="80" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_AssessmentOutcome_di" bpmnElement="Gateway_AssessmentOutcome" isMarkerVisible="true">
-        <dc:Bounds x="1705" y="595" width="50" height="50" />
+        <dc:Bounds x="1615" y="835" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1685" y="651" width="90" height="28" />
+          <dc:Bounds x="1595" y="891" width="90" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_HandOverED_di" bpmnElement="Task_HandOverED" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
-        <dc:Bounds x="2000" y="580" width="100" height="80" />
+        <dc:Bounds x="1890" y="820" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_EmergencyReferral_di" bpmnElement="EndEvent_EmergencyReferral" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
-        <dc:Bounds x="2192" y="602" width="36" height="36" />
+        <dc:Bounds x="2072" y="842" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2155" y="644" width="110" height="28" />
+          <dc:Bounds x="2035" y="884" width="110" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_EscalateDutyManager_di" bpmnElement="Task_EscalateDutyManager" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
-        <dc:Bounds x="1680" y="700" width="100" height="80" />
+        <dc:Bounds x="1590" y="940" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_DutyManagerAlerted_di" bpmnElement="EndEvent_DutyManagerAlerted" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
-        <dc:Bounds x="1872" y="722" width="36" height="36" />
+        <dc:Bounds x="1772" y="962" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1835" y="764" width="110" height="28" />
+          <dc:Bounds x="1735" y="1004" width="110" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_JoinStaffNoSlot_di" bpmnElement="Gateway_JoinStaffNoSlot" isMarkerVisible="true">
+        <dc:Bounds x="2965" y="115" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_JoinStaffTaken_di" bpmnElement="Gateway_JoinStaffTaken" isMarkerVisible="true">
+        <dc:Bounds x="3115" y="115" width="50" height="50" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_ResolveScheduling_di" bpmnElement="Task_ResolveScheduling" bioc:stroke="#e65100" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#e65100">
-        <dc:Bounds x="2320" y="100" width="100" height="80" />
+        <dc:Bounds x="3240" y="100" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_SchedulingOutcome_di" bpmnElement="Gateway_SchedulingOutcome" isMarkerVisible="true">
-        <dc:Bounds x="2505" y="115" width="50" height="50" />
+        <dc:Bounds x="3415" y="115" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2561" y="100" width="76" height="28" />
+          <dc:Bounds x="3338" y="89" width="80" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_NotifyWaitlisted_di" bpmnElement="Task_NotifyWaitlisted" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
-        <dc:Bounds x="2640" y="100" width="100" height="80" />
+        <dc:Bounds x="3540" y="100" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_Waitlisted_di" bpmnElement="EndEvent_Waitlisted" bioc:stroke="#c62828" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#c62828">
-        <dc:Bounds x="2832" y="122" width="36" height="36" />
+        <dc:Bounds x="3722" y="122" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2795" y="164" width="110" height="28" />
+          <dc:Bounds x="3764" y="126" width="70" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_Start_Validate_di" bpmnElement="Flow_Start_Validate">
         <di:waypoint x="308" y="380" />
-        <di:waypoint x="400" y="380" />
+        <di:waypoint x="390" y="380" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Validate_Gw_di" bpmnElement="Flow_Validate_Gw">
-        <di:waypoint x="500" y="380" />
-        <di:waypoint x="585" y="380" />
+        <di:waypoint x="490" y="380" />
+        <di:waypoint x="565" y="380" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Registration_Yes_di" bpmnElement="Flow_Registration_Yes">
-        <di:waypoint x="635" y="380" />
-        <di:waypoint x="720" y="380" />
+        <di:waypoint x="615" y="380" />
+        <di:waypoint x="690" y="380" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="643" y="358" width="30" height="14" />
+          <dc:Bounds x="623" y="358" width="30" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Registration_No_di" bpmnElement="Flow_Registration_No">
-        <di:waypoint x="610" y="355" />
-        <di:waypoint x="610" y="260" />
-        <di:waypoint x="720" y="260" />
+        <di:waypoint x="590" y="355" />
+        <di:waypoint x="590" y="260" />
+        <di:waypoint x="690" y="260" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="616" y="329" width="30" height="14" />
+          <dc:Bounds x="596" y="329" width="30" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Missing_End_di" bpmnElement="Flow_Missing_End">
-        <di:waypoint x="820" y="260" />
-        <di:waypoint x="912" y="260" />
+        <di:waypoint x="790" y="260" />
+        <di:waypoint x="872" y="260" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Triage_Urgent_di" bpmnElement="Flow_Triage_Urgent">
-        <di:waypoint x="820" y="380" />
-        <di:waypoint x="905" y="380" />
+        <di:waypoint x="790" y="380" />
+        <di:waypoint x="865" y="380" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Urgent_Yes_di" bpmnElement="Flow_Urgent_Yes">
-        <di:waypoint x="930" y="405" />
-        <di:waypoint x="930" y="620" />
-        <di:waypoint x="1385" y="620" />
+        <di:waypoint x="890" y="405" />
+        <di:waypoint x="890" y="860" />
+        <di:waypoint x="1315" y="860" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="936" y="411" width="78" height="14" />
+          <dc:Bounds x="896" y="460" width="78" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Urgent_No_di" bpmnElement="Flow_Urgent_No">
-        <di:waypoint x="955" y="380" />
-        <di:waypoint x="1065" y="380" />
+        <di:waypoint x="915" y="380" />
+        <di:waypoint x="1015" y="380" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="963" y="358" width="30" height="14" />
+          <dc:Bounds x="923" y="358" width="30" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Priority_Yes_di" bpmnElement="Flow_Priority_Yes">
-        <di:waypoint x="1090" y="405" />
-        <di:waypoint x="1090" y="500" />
-        <di:waypoint x="1200" y="500" />
+        <di:waypoint x="1040" y="405" />
+        <di:waypoint x="1040" y="740" />
+        <di:waypoint x="1140" y="740" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1096" y="411" width="91" height="14" />
+          <dc:Bounds x="1046" y="460" width="91" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Priority_No_di" bpmnElement="Flow_Priority_No">
-        <di:waypoint x="1115" y="380" />
-        <di:waypoint x="1545" y="380" />
+        <di:waypoint x="1065" y="380" />
+        <di:waypoint x="1465" y="380" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1123" y="358" width="78" height="14" />
+          <dc:Bounds x="1073" y="358" width="78" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Review_Gw_di" bpmnElement="Flow_Review_Gw">
-        <di:waypoint x="1300" y="500" />
-        <di:waypoint x="1385" y="500" />
+        <di:waypoint x="1240" y="740" />
+        <di:waypoint x="1315" y="740" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Review_Book_di" bpmnElement="Flow_Review_Book">
-        <di:waypoint x="1435" y="500" />
-        <di:waypoint x="1570" y="500" />
-        <di:waypoint x="1570" y="405" />
+        <di:waypoint x="1365" y="740" />
+        <di:waypoint x="1490" y="740" />
+        <di:waypoint x="1490" y="405" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1440" y="480" width="104" height="14" />
+          <dc:Bounds x="1370" y="720" width="104" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Review_Escalate_di" bpmnElement="Flow_Review_Escalate">
-        <di:waypoint x="1410" y="525" />
-        <di:waypoint x="1410" y="595" />
+        <di:waypoint x="1340" y="765" />
+        <di:waypoint x="1340" y="835" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1416" y="531" width="52" height="14" />
+          <dc:Bounds x="1346" y="771" width="52" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_JoinAssessment_Task_di" bpmnElement="Flow_JoinAssessment_Task">
-        <di:waypoint x="1435" y="620" />
-        <di:waypoint x="1520" y="620" />
+        <di:waypoint x="1365" y="860" />
+        <di:waypoint x="1440" y="860" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Assessment_Gw_di" bpmnElement="Flow_Assessment_Gw">
-        <di:waypoint x="1620" y="620" />
-        <di:waypoint x="1705" y="620" />
+        <di:waypoint x="1540" y="860" />
+        <di:waypoint x="1615" y="860" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Assessment_Book_di" bpmnElement="Flow_Assessment_Book">
-        <di:waypoint x="1730" y="595" />
-        <di:waypoint x="1730" y="405" />
+        <di:waypoint x="1640" y="835" />
+        <di:waypoint x="1640" y="405" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1736" y="569" width="104" height="14" />
+          <dc:Bounds x="1646" y="640" width="104" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Assessment_ED_di" bpmnElement="Flow_Assessment_ED">
-        <di:waypoint x="1755" y="620" />
-        <di:waypoint x="2000" y="620" />
+        <di:waypoint x="1665" y="860" />
+        <di:waypoint x="1890" y="860" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1763" y="598" width="117" height="14" />
+          <dc:Bounds x="1673" y="838" width="117" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_HandOver_End_di" bpmnElement="Flow_HandOver_End">
-        <di:waypoint x="2100" y="620" />
-        <di:waypoint x="2192" y="620" />
+        <di:waypoint x="1990" y="860" />
+        <di:waypoint x="2072" y="860" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Timer_Escalate_di" bpmnElement="Flow_Timer_Escalate">
-        <di:waypoint x="1570" y="678" />
-        <di:waypoint x="1570" y="740" />
-        <di:waypoint x="1680" y="740" />
+        <di:waypoint x="1490" y="918" />
+        <di:waypoint x="1490" y="980" />
+        <di:waypoint x="1590" y="980" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Escalate_End_di" bpmnElement="Flow_Escalate_End">
-        <di:waypoint x="1780" y="740" />
-        <di:waypoint x="1872" y="740" />
+        <di:waypoint x="1690" y="980" />
+        <di:waypoint x="1772" y="980" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_JoinPriority_JoinUrgent_di" bpmnElement="Flow_JoinPriority_JoinUrgent">
-        <di:waypoint x="1595" y="380" />
-        <di:waypoint x="1705" y="380" />
+        <di:waypoint x="1515" y="380" />
+        <di:waypoint x="1615" y="380" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_JoinUrgent_Request_di" bpmnElement="Flow_JoinUrgent_Request">
-        <di:waypoint x="1755" y="380" />
-        <di:waypoint x="1840" y="380" />
+        <di:waypoint x="1665" y="380" />
+        <di:waypoint x="1740" y="380" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Request_Slots_di" bpmnElement="Flow_Request_Slots">
-        <di:waypoint x="1940" y="380" />
-        <di:waypoint x="2000" y="380" />
+        <di:waypoint x="1840" y="380" />
+        <di:waypoint x="1890" y="380" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Slots_Gw_di" bpmnElement="Flow_Slots_Gw">
-        <di:waypoint x="2100" y="380" />
-        <di:waypoint x="2185" y="380" />
+        <di:waypoint x="1990" y="380" />
+        <di:waypoint x="2065" y="380" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Slot_Yes_di" bpmnElement="Flow_Slot_Yes">
-        <di:waypoint x="2235" y="380" />
-        <di:waypoint x="2320" y="380" />
+        <di:waypoint x="2115" y="380" />
+        <di:waypoint x="2515" y="380" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2243" y="358" width="30" height="14" />
+          <dc:Bounds x="2123" y="358" width="30" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Slot_No_di" bpmnElement="Flow_Slot_No">
-        <di:waypoint x="2210" y="355" />
-        <di:waypoint x="2210" y="140" />
-        <di:waypoint x="2320" y="140" />
+        <di:waypoint x="2090" y="355" />
+        <di:waypoint x="2090" y="260" />
+        <di:waypoint x="2190" y="260" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2216" y="329" width="30" height="14" />
+          <dc:Bounds x="2096" y="329" width="30" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Partner_Gw_di" bpmnElement="Flow_Partner_Gw">
+        <di:waypoint x="2290" y="260" />
+        <di:waypoint x="2365" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Partner_Yes_di" bpmnElement="Flow_Partner_Yes">
+        <di:waypoint x="2415" y="260" />
+        <di:waypoint x="2540" y="260" />
+        <di:waypoint x="2540" y="355" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2423" y="238" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Partner_No_di" bpmnElement="Flow_Partner_No">
+        <di:waypoint x="2390" y="235" />
+        <di:waypoint x="2390" y="140" />
+        <di:waypoint x="2965" y="140" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2396" y="209" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_JoinSlotFound_Book_di" bpmnElement="Flow_JoinSlotFound_Book">
+        <di:waypoint x="2565" y="380" />
+        <di:waypoint x="2640" y="380" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Book_JoinBooked_di" bpmnElement="Flow_Book_JoinBooked">
-        <di:waypoint x="2420" y="380" />
-        <di:waypoint x="2505" y="380" />
+        <di:waypoint x="2740" y="380" />
+        <di:waypoint x="3265" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SlotTaken_Requery_di" bpmnElement="Flow_SlotTaken_Requery">
+        <di:waypoint x="2690" y="322" />
+        <di:waypoint x="2690" y="260" />
+        <di:waypoint x="2790" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Requery_Gw_di" bpmnElement="Flow_Requery_Gw">
+        <di:waypoint x="2890" y="260" />
+        <di:waypoint x="2965" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Free_Yes_di" bpmnElement="Flow_Free_Yes">
+        <di:waypoint x="3015" y="260" />
+        <di:waypoint x="3090" y="260" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3023" y="238" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Free_No_di" bpmnElement="Flow_Free_No">
+        <di:waypoint x="2990" y="235" />
+        <di:waypoint x="2990" y="165" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2996" y="209" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Requeried_JoinBooked_di" bpmnElement="Flow_Requeried_JoinBooked">
+        <di:waypoint x="3190" y="260" />
+        <di:waypoint x="3290" y="260" />
+        <di:waypoint x="3290" y="355" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TakenAgain_Staff_di" bpmnElement="Flow_TakenAgain_Staff">
+        <di:waypoint x="3140" y="202" />
+        <di:waypoint x="3140" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_JoinStaffNoSlot_Taken_di" bpmnElement="Flow_JoinStaffNoSlot_Taken">
+        <di:waypoint x="3015" y="140" />
+        <di:waypoint x="3115" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_JoinStaffTaken_Resolve_di" bpmnElement="Flow_JoinStaffTaken_Resolve">
+        <di:waypoint x="3165" y="140" />
+        <di:waypoint x="3240" y="140" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Resolve_Gw_di" bpmnElement="Flow_Resolve_Gw">
-        <di:waypoint x="2420" y="140" />
-        <di:waypoint x="2505" y="140" />
+        <di:waypoint x="3340" y="140" />
+        <di:waypoint x="3415" y="140" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Scheduling_Manual_di" bpmnElement="Flow_Scheduling_Manual">
-        <di:waypoint x="2530" y="165" />
-        <di:waypoint x="2530" y="355" />
+        <di:waypoint x="3440" y="165" />
+        <di:waypoint x="3440" y="355" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2536" y="171" width="71" height="14" />
+          <dc:Bounds x="3446" y="230" width="71" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Scheduling_Waitlist_di" bpmnElement="Flow_Scheduling_Waitlist">
-        <di:waypoint x="2555" y="140" />
-        <di:waypoint x="2640" y="140" />
+        <di:waypoint x="3465" y="140" />
+        <di:waypoint x="3540" y="140" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2560" y="146" width="78" height="14" />
+          <dc:Bounds x="3468" y="144" width="78" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Waitlist_End_di" bpmnElement="Flow_Waitlist_End">
-        <di:waypoint x="2740" y="140" />
-        <di:waypoint x="2832" y="140" />
+        <di:waypoint x="3640" y="140" />
+        <di:waypoint x="3722" y="140" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_JoinBooked_Confirm_di" bpmnElement="Flow_JoinBooked_Confirm">
-        <di:waypoint x="2555" y="380" />
-        <di:waypoint x="2640" y="380" />
+      <bpmndi:BPMNEdge id="Flow_JoinBooked_JoinManual_di" bpmnElement="Flow_JoinBooked_JoinManual">
+        <di:waypoint x="3315" y="380" />
+        <di:waypoint x="3415" y="380" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_Confirm_End_di" bpmnElement="Flow_Confirm_End">
-        <di:waypoint x="2740" y="380" />
-        <di:waypoint x="2832" y="380" />
+      <bpmndi:BPMNEdge id="Flow_JoinManual_Ask_di" bpmnElement="Flow_JoinManual_Ask">
+        <di:waypoint x="3465" y="380" />
+        <di:waypoint x="3540" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Ask_Wait_di" bpmnElement="Flow_Ask_Wait">
+        <di:waypoint x="3640" y="380" />
+        <di:waypoint x="3690" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Wait_End_di" bpmnElement="Flow_Wait_End">
+        <di:waypoint x="3790" y="380" />
+        <di:waypoint x="3872" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Reminder_Send_di" bpmnElement="Flow_Reminder_Send">
+        <di:waypoint x="3765" y="438" />
+        <di:waypoint x="3765" y="500" />
+        <di:waypoint x="3840" y="500" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Reminder_End_di" bpmnElement="Flow_Reminder_End">
+        <di:waypoint x="3940" y="500" />
+        <di:waypoint x="4022" y="500" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Timeout_Release_di" bpmnElement="Flow_Timeout_Release">
+        <di:waypoint x="3715" y="438" />
+        <di:waypoint x="3715" y="620" />
+        <di:waypoint x="3840" y="620" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Release_Notify_di" bpmnElement="Flow_Release_Notify">
+        <di:waypoint x="3940" y="620" />
+        <di:waypoint x="3990" y="620" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Released_End_di" bpmnElement="Flow_Released_End">
+        <di:waypoint x="4090" y="620" />
+        <di:waypoint x="4172" y="620" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Annotation_DmnRules_di" bpmnElement="Annotation_DmnRules">
-        <dc:Bounds x="1210" y="216" width="340" height="92" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Annotation_SchedulingOutage_di" bpmnElement="Annotation_SchedulingOutage">
-        <dc:Bounds x="1700" y="230" width="230" height="60" />
+        <dc:Bounds x="400" y="94" width="340" height="92" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Annotation_Disclaimer_di" bpmnElement="Annotation_Disclaimer">
-        <dc:Bounds x="1870" y="478" width="300" height="44" />
+        <dc:Bounds x="920" y="118" width="300" height="44" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_SchedulingOutage_di" bpmnElement="Annotation_SchedulingOutage">
+        <dc:Bounds x="1590" y="230" width="230" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_Fallbacks_di" bpmnElement="Annotation_Fallbacks">
+        <dc:Bounds x="1590" y="102" width="270" height="76" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_Timers_di" bpmnElement="Annotation_Timers">
+        <dc:Bounds x="2260" y="830" width="280" height="60" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Annotation_Legend_di" bpmnElement="Annotation_Legend">
-        <dc:Bounds x="2220" y="684" width="220" height="108" />
+        <dc:Bounds x="2710" y="794" width="230" height="124" />
       </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
