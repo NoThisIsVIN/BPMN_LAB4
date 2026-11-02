@@ -1,130 +1,91 @@
-# PBJ-2 Practical Assignment – Camunda 8: End-to-End Workflow Automation (Labs 1–3)
+# PBJ-2 Camunda 8 – Labs 1 to 3
 
-Three separate workflow implementations on **Camunda 8** (Zeebe, Operate, Tasklist, Connectors). Each one has a BPMN
-process, a DMN decision table, Tasklist forms, a **Java / Spring Boot** job-worker application with a mock REST API, a
-**REST Outbound Connector**, test scenarios executed against the running engine, and real Operate/Tasklist screenshots,
-including incident investigation and recovery.
+Three workflows built on **Camunda 8** (Zeebe, Operate, Tasklist, Connectors). Each lab has a BPMN process, a DMN
+table, a Tasklist form, a **Spring Boot** job-worker app with a mock REST API, and a **REST Connector**. Every test
+was run on a real Camunda 8 Run engine, and all screenshots come from those runs. All data is **synthetic**.
 
-| Lab | Process | Report | Scenarios |
+| Lab | Process | Tests | Full report |
 |---|---|---|---|
-| 1 – Loan approval | `loan-approval` + DMN `loan-decision` | [lab1-loan-approval/REPORT.md](lab1-loan-approval/REPORT.md) | 17 / 17 PASS |
-| 2 – E-commerce order fulfilment | `order-fulfilment` + DMN `order-priority` | [lab2-order-fulfilment/REPORT.md](lab2-order-fulfilment/REPORT.md) | 12 / 12 PASS |
-| 3 – Hospital appointment & triage | `patient-appointment-triage` + DMN `triage-category` | [lab3-hospital-triage/REPORT.md](lab3-hospital-triage/REPORT.md) | 12 / 12 PASS |
+| 1 – Loan approval | `loan-approval` + DMN `loan-decision` | 17 / 17 PASS | [REPORT.md](lab1-loan-approval/REPORT.md) |
+| 2 – Order fulfilment | `order-fulfilment` + DMN `order-priority` | 12 / 12 PASS | [REPORT.md](lab2-order-fulfilment/REPORT.md) |
+| 3 – Hospital triage | `patient-appointment-triage` + DMN `triage-category` | 12 / 12 PASS | [REPORT.md](lab3-hospital-triage/REPORT.md) |
 
-All data is **synthetic**. There are no real payment credentials, secrets or patient data, and the decision rules are educational.
+Click any picture to open it at full size.
 
-## At a glance: BPMN, DMN, form and REST API
+## Lab 1 – Loan approval
 
-Click any image to open it at full size.
+**How it works**
+1. A Java worker **validates** the application. If details are missing, the applicant is asked for them (closed after 7 days with no reply).
+2. The REST Connector gets a **credit score** from the primary bureau. If it is down, the **backup bureau** is used. If both are down, an officer decides without a score.
+3. The **DMN** decides: *Approved*, *Rejected* or *Manual review* (first matching rule wins).
+4. **Manual review** is done by a loan officer in Tasklist: a reminder is sent after 24 h, and the task is escalated after 48 h.
+5. The applicant must **accept the offer** within 14 days, then the loan is paid out.
 
-### Lab 1 – Loan approval
-
-**BPMN** – [`loan-approval.bpmn`](lab1-loan-approval/src/main/resources/models/loan-approval.bpmn)
+**REST API:** `POST http://localhost:8081/mock/credit-bureau/primary/assessments` (backup: `/backup/assessments`) · examples in [`api-examples/`](lab1-loan-approval/api-examples/)
 
 [![Lab 1 BPMN](lab1-loan-approval/evidence/screenshots/01-bpmn-design.png)](lab1-loan-approval/evidence/screenshots/01-bpmn-design.png)
 
 <table>
-<tr><th>DMN – <a href="lab1-loan-approval/src/main/resources/models/loan-decision.dmn"><code>loan-decision.dmn</code></a></th><th>Tasklist form – <a href="lab1-loan-approval/src/main/resources/models/loan-review-form.form"><code>loan-review-form.form</code></a></th></tr>
-<tr>
-<td width="60%"><a href="lab1-loan-approval/evidence/screenshots/02-dmn-decision-table.png"><img src="lab1-loan-approval/evidence/screenshots/02-dmn-decision-table.png" alt="Lab 1 DMN"></a></td>
-<td width="40%"><a href="lab1-loan-approval/evidence/screenshots/06-tasklist-task-form.png"><img src="lab1-loan-approval/evidence/screenshots/06-tasklist-task-form.png" alt="Lab 1 form"></a></td>
-</tr>
+<tr><th>DMN decision table</th><th>Tasklist form (loan review)</th></tr>
+<tr><td width="60%"><a href="lab1-loan-approval/evidence/screenshots/02-dmn-decision-table.png"><img src="lab1-loan-approval/evidence/screenshots/02-dmn-decision-table.png" alt="Lab 1 DMN"></a></td><td width="40%"><a href="lab1-loan-approval/evidence/screenshots/06-tasklist-task-form.png"><img src="lab1-loan-approval/evidence/screenshots/06-tasklist-task-form.png" alt="Lab 1 form"></a></td></tr>
+<tr><th>Operate – incident raised</th><th>Operate – same instance after fix + retry</th></tr>
+<tr><td><a href="lab1-loan-approval/evidence/screenshots/07-operate-incident-L1-09.png"><img src="lab1-loan-approval/evidence/screenshots/07-operate-incident-L1-09.png" alt="Lab 1 incident"></a></td><td><a href="lab1-loan-approval/evidence/screenshots/09-operate-recovered-L1-09.png"><img src="lab1-loan-approval/evidence/screenshots/09-operate-recovered-L1-09.png" alt="Lab 1 recovered"></a></td></tr>
 </table>
 
-**REST API** – REST Outbound Connector → mock API (requests and real responses in [`api-examples/`](lab1-loan-approval/api-examples/))
+## Lab 2 – E-commerce order fulfilment
 
-| Connector task | Request | When it fails |
-|---|---|---|
-| Request credit score – primary bureau | `POST http://localhost:8081/mock/credit-bureau/primary/assessments` | HTTP 5xx or timeout (5 s) → BPMN error → backup bureau |
-| Request credit score – backup bureau | `POST http://localhost:8081/mock/credit-bureau/backup/assessments` | also down → loan officer decides without a score |
+**How it works**
+1. Java workers **validate** the order and **reserve stock**, using the secondary warehouse if the primary one is short. Then they calculate the total.
+2. The **DMN** sets the delivery priority and SLA.
+3. Orders of 2 000 EUR or more (1 000 EUR or more for new customers) need a **reviewer** in Tasklist.
+4. The REST Connector **charges the payment** with the primary provider, or the **backup provider** if the primary is down. If the card is declined, the customer can send another payment method.
+5. The shipment is booked, using the backup carrier if needed. Every cancellation **releases the stock**.
 
-### Lab 2 – E-commerce order fulfilment
-
-**BPMN** – [`order-fulfilment.bpmn`](lab2-order-fulfilment/src/main/resources/models/order-fulfilment.bpmn)
+**REST API:** `POST http://localhost:8082/mock/payment-gateway/primary/charges` (backup: `/backup/charges`) · examples in [`api-examples/`](lab2-order-fulfilment/api-examples/)
 
 [![Lab 2 BPMN](lab2-order-fulfilment/evidence/screenshots/01-bpmn-design.png)](lab2-order-fulfilment/evidence/screenshots/01-bpmn-design.png)
 
 <table>
-<tr><th>DMN – <a href="lab2-order-fulfilment/src/main/resources/models/order-priority.dmn"><code>order-priority.dmn</code></a></th><th>Tasklist form – <a href="lab2-order-fulfilment/src/main/resources/models/order-verification-form.form"><code>order-verification-form.form</code></a></th></tr>
-<tr>
-<td width="60%"><a href="lab2-order-fulfilment/evidence/screenshots/02-dmn-decision-table.png"><img src="lab2-order-fulfilment/evidence/screenshots/02-dmn-decision-table.png" alt="Lab 2 DMN"></a></td>
-<td width="40%"><a href="lab2-order-fulfilment/evidence/screenshots/06-tasklist-task-form.png"><img src="lab2-order-fulfilment/evidence/screenshots/06-tasklist-task-form.png" alt="Lab 2 form"></a></td>
-</tr>
+<tr><th>DMN decision table</th><th>Tasklist form (order verification)</th></tr>
+<tr><td width="60%"><a href="lab2-order-fulfilment/evidence/screenshots/02-dmn-decision-table.png"><img src="lab2-order-fulfilment/evidence/screenshots/02-dmn-decision-table.png" alt="Lab 2 DMN"></a></td><td width="40%"><a href="lab2-order-fulfilment/evidence/screenshots/06-tasklist-task-form.png"><img src="lab2-order-fulfilment/evidence/screenshots/06-tasklist-task-form.png" alt="Lab 2 form"></a></td></tr>
+<tr><th>Operate – incident raised</th><th>Operate – same instance after fix + retry</th></tr>
+<tr><td><a href="lab2-order-fulfilment/evidence/screenshots/07-operate-incident-L2-07.png"><img src="lab2-order-fulfilment/evidence/screenshots/07-operate-incident-L2-07.png" alt="Lab 2 incident"></a></td><td><a href="lab2-order-fulfilment/evidence/screenshots/09-operate-recovered-L2-07.png"><img src="lab2-order-fulfilment/evidence/screenshots/09-operate-recovered-L2-07.png" alt="Lab 2 recovered"></a></td></tr>
 </table>
 
-**REST API** – REST Outbound Connector → mock API (requests and real responses in [`api-examples/`](lab2-order-fulfilment/api-examples/))
+## Lab 3 – Hospital appointment and triage
 
-| Connector task | Request | When it fails |
-|---|---|---|
-| Charge payment – primary provider | `POST http://localhost:8082/mock/payment-gateway/primary/charges` | HTTP 503 → backup provider; DECLINED (HTTP 200) → ask the customer for another payment method |
-| Charge payment – backup provider | `POST http://localhost:8082/mock/payment-gateway/backup/charges` | also down → retries → incident in Operate → fixed and retried |
+**How it works**
+1. A Java worker **validates** the registration.
+2. The **DMN** sorts the request into *Routine*, *Priority review* or *Urgent assessment* (educational rules, not medical advice).
+3. **Urgent** cases go to a clinician in Tasklist, and the duty manager is alerted if nobody picks them up. **Priority** cases go to a staff review.
+4. The REST Connector **finds free slots** at the main hospital, or at the **partner clinic** if the hospital has none. If a slot is taken while booking, it searches again.
+5. The patient must **confirm**: a reminder is sent, and unconfirmed slots are released.
 
-### Lab 3 – Hospital appointment and patient triage
-
-**BPMN** – [`patient-appointment-triage.bpmn`](lab3-hospital-triage/src/main/resources/models/patient-appointment-triage.bpmn)
+**REST API:** `GET http://localhost:8083/mock/scheduling/availability-requests/{id}/slots?site=MAIN_HOSPITAL` (or `PARTNER_CLINIC`) · examples in [`api-examples/`](lab3-hospital-triage/api-examples/)
 
 [![Lab 3 BPMN](lab3-hospital-triage/evidence/screenshots/01-bpmn-design.png)](lab3-hospital-triage/evidence/screenshots/01-bpmn-design.png)
 
 <table>
-<tr><th>DMN – <a href="lab3-hospital-triage/src/main/resources/models/triage-category.dmn"><code>triage-category.dmn</code></a></th><th>Tasklist form – <a href="lab3-hospital-triage/src/main/resources/models/priority-review-form.form"><code>priority-review-form.form</code></a></th></tr>
-<tr>
-<td width="60%"><a href="lab3-hospital-triage/evidence/screenshots/02-dmn-decision-table.png"><img src="lab3-hospital-triage/evidence/screenshots/02-dmn-decision-table.png" alt="Lab 3 DMN"></a></td>
-<td width="40%"><a href="lab3-hospital-triage/evidence/screenshots/06-tasklist-task-form-priority-review.png"><img src="lab3-hospital-triage/evidence/screenshots/06-tasklist-task-form-priority-review.png" alt="Lab 3 form"></a></td>
-</tr>
+<tr><th>DMN decision table</th><th>Tasklist form (priority review)</th></tr>
+<tr><td width="60%"><a href="lab3-hospital-triage/evidence/screenshots/02-dmn-decision-table.png"><img src="lab3-hospital-triage/evidence/screenshots/02-dmn-decision-table.png" alt="Lab 3 DMN"></a></td><td width="40%"><a href="lab3-hospital-triage/evidence/screenshots/06-tasklist-task-form-priority-review.png"><img src="lab3-hospital-triage/evidence/screenshots/06-tasklist-task-form-priority-review.png" alt="Lab 3 form"></a></td></tr>
+<tr><th>Operate – incident raised</th><th>Operate – same instance after fix + retry</th></tr>
+<tr><td><a href="lab3-hospital-triage/evidence/screenshots/07-operate-incident.png"><img src="lab3-hospital-triage/evidence/screenshots/07-operate-incident.png" alt="Lab 3 incident"></a></td><td><a href="lab3-hospital-triage/evidence/screenshots/09-operate-recovered.png"><img src="lab3-hospital-triage/evidence/screenshots/09-operate-recovered.png" alt="Lab 3 recovered"></a></td></tr>
 </table>
 
-**REST API** – REST Outbound Connector → mock API (requests and real responses in [`api-examples/`](lab3-hospital-triage/api-examples/))
+## Results
 
-| Connector task | Request | When it fails |
-|---|---|---|
-| Retrieve available slots | `GET http://localhost:8083/mock/scheduling/availability-requests/{id}/slots?site=MAIN_HOSPITAL` | no slots → partner clinic; outage → retries → incident in Operate → fixed and retried |
-| Search partner clinic | `GET http://localhost:8083/mock/scheduling/availability-requests/{id}/slots?site=PARTNER_CLINIC` | no slots there either → scheduling staff resolve it in Tasklist |
-| Re-query available slots | `GET http://localhost:8083/mock/scheduling/availability-requests/{id}/slots?site={same site}` | used after the booking API answers HTTP 409 (slot taken) |
+| | Tests | Passed | Human tasks | Incidents fixed | Unit tests |
+|---|---|---|---|---|---|
+| Lab 1 | 17 | 17 | 4 | 2 | 4 / 4 |
+| Lab 2 | 12 | 12 | 2 | 2 | 9 / 9 |
+| Lab 3 | 12 | 12 | 8 | 1 | 13 / 13 |
+| **Total** | **41** | **41** | **14** | **5** | **26 / 26** |
 
-Each process also models **real-world pitfalls and their solutions** rather than only the happy path:
+The outputs below are the real process variables read back from the engine after each run. For failure tests, the
+output starts with the incident shown in Operate, which was then fixed and retried.
 
-| Lab | Pitfall → solution modelled in BPMN |
-|---|---|
-| 1 | primary credit bureau (CIBIL-like) down → **backup bureau**; both down → officer decides without a score · incomplete application → **ask the applicant**, re-validate, close after 7 days · identity (KYC) check · officer idle → reminder (24 h) → **senior-officer escalation** (48 h) · offer must be **accepted within 14 days** |
-| 2 | primary warehouse short → **secondary warehouse** · primary payment provider down → **backup provider**; both down → incident · card declined → **customer sends another payment method** (30 min, max 2 attempts) · carrier API down → **backup carrier** · stock released on every cancellation |
-| 3 | main hospital full → **partner clinic** · slot taken while booking → **automatic re-query** · patient must **confirm**: reminder (12 h), slot **released** after 24 h · urgent case not picked up → **duty-manager escalation** (15 min) |
-
-All timers read their duration from a process variable with the business value as default, so the tests could fire every timer in seconds.
-
-## Results of all experiments
-
-Every experiment below was executed against the running Camunda 8 Run 8.8 engine (Zeebe, Operate, Tasklist,
-Connectors) on this machine. The tables are generated from each lab's `evidence/run-log.json`, so the **outputs are the
-actual process variables** read back from the engine after each instance finished, not expected values.
-
-| | Experiments | Passed | Human tasks | Incidents caused and recovered | DMN sample evaluations | Unit tests |
-|---|---|---|---|---|---|---|
-| Lab 1 | 17 | 17 | 4 (1 completed in the Tasklist UI) | 2 | 7 | 4 / 4 |
-| Lab 2 | 12 | 12 | 2 (1 completed in the Tasklist UI) | 2 | 7 | 9 / 9 |
-| Lab 3 | 12 | 12 | 8 (2 completed in the Tasklist UI) | 1 | 9 | 13 / 13 |
-| **Total** | **41** | **41** | **14** | **5** | **23** | **26 / 26** |
-
-How to read the tables: *Actual end event* is where the instance finished. *Output* lists the key variables produced
-on the way (validation result, connector response, DMN result, human decision, final status). For failure experiments
-it starts with the incident Operate showed, which was then fixed and retried.
-
-### Lab 1 – Loan approval
-
-**What it does:**
-1. A Java worker validates the application. Missing details are **requested from the applicant** and validated again; if the applicant never replies, the application is closed.
-2. Not-eligible applicants and failed identity (KYC) checks go straight to one shared rejection track.
-3. The REST Connector asks the **primary credit bureau** (CIBIL-like) for a score. If it is down or slow, the process **falls back to a backup bureau**. If both are down, a loan officer decides without a score.
-4. The DMN `loan-decision` returns Approved, Rejected or Manual review.
-5. Reviews send a reminder after 24 h and **escalate to a senior officer** after 48 h.
-6. An approved applicant must **accept the offer** within 14 days before the loan is disbursed.
-
-**What the experiments show:**
-- Strong applicants are approved, accept the offer and get the loan disbursed.
-- Weak ones are rejected by the matching rule, and ineligible or unverified applicants are rejected before any credit data is requested.
-- When the primary bureau fails with HTTP 500 or a timeout, the **backup bureau's score** is used and the loan still goes through.
-- A missing e-mail is asked for, received as a message and re-validated.
-- Every timer fired in a real run (with test durations of a few seconds): application closed, review escalated, offer expired.
-- The two worker failures appear as incidents in Operate and finish normally once the cause is fixed and the job retried.
+<details>
+<summary><b>Lab 1 – all 17 test outputs</b></summary>
 
 <!-- RESULTS:lab1:BEGIN -->
 | ID | Experiment | Actual end event | Output (real process variables) | Status |
@@ -150,24 +111,10 @@ it starts with the incident Operate showed, which was then fixed and retried.
 **17 / 17 passed.** Instance keys, every action taken and all variables: [`lab1-loan-approval/evidence/run-log.json`](lab1-loan-approval/evidence/run-log.json).
 <!-- RESULTS:lab1:END -->
 
-### Lab 2 – E-commerce order processing and fulfilment
+</details>
 
-**What it does:**
-1. Java workers validate the order and **reserve** stock in the primary warehouse, or in the **secondary warehouse** if the primary is short; then they calculate the total.
-2. The DMN `order-priority` sets the delivery priority and SLA.
-3. Orders of 2 000 EUR or more, or 1 000 EUR or more from NEW customers, need a reviewer in Tasklist.
-4. The REST Connector charges the **primary payment provider**. If it is down (HTTP 5xx / timeout), the **backup provider** is charged. If both are down, an incident is raised.
-5. A declined card gives the customer a chance to **send another payment method** (message, at most 2 attempts, 30 min).
-6. The shipment is booked with the primary carrier, or the **backup carrier** if its API is down.
-7. Every cancellation releases the reserved stock (compensation).
-
-**What the experiments show:**
-- Normal orders are paid and shipped.
-- A primary warehouse with no stock is covered by the secondary one; when both are short, the order is cancelled before payment.
-- With the primary provider down, the card is charged by the backup provider and the order still ships.
-- A declined card plus a new token from the customer gets paid on attempt 2. When the customer stays silent, the 8-second test timer releases the stock and cancels the order.
-- High-value and NEW-customer orders wait for the reviewer.
-- With both payment providers down, and with the inventory service down, an incident is raised; after the service is restored and the job retried, the order is fulfilled.
+<details>
+<summary><b>Lab 2 – all 12 test outputs</b></summary>
 
 <!-- RESULTS:lab2:BEGIN -->
 | ID | Experiment | Actual end event | Output (real process variables) | Status |
@@ -188,25 +135,10 @@ it starts with the incident Operate showed, which was then fixed and retried.
 **12 / 12 passed.** Instance keys, every action taken and all variables: [`lab2-order-fulfilment/evidence/run-log.json`](lab2-order-fulfilment/evidence/run-log.json).
 <!-- RESULTS:lab2:END -->
 
-### Lab 3 – Hospital appointment and patient triage
+</details>
 
-**What it does:**
-1. A Java worker validates the registration.
-2. The DMN `triage-category` classifies the request as Routine, Priority Review or Urgent Assessment (educational rules, not clinical guidance).
-3. Urgent cases go to immediate clinical assessment in Tasklist; if nobody picks the case up, the **duty manager is alerted**. Priority cases go to staff review.
-4. The REST Connector retrieves free slots at the main hospital, then at the **partner clinic** if the main hospital has none.
-5. If the slot is taken by someone else while booking, the process **re-queries automatically** once. Scheduling staff step in only when both automatic options fail.
-6. The patient must **confirm** the appointment. A reminder is sent, and an unconfirmed slot is **released** for other patients.
-
-**What the experiments show:**
-- Routine, priority and escalated requests end with a booked **and confirmed** appointment.
-- Chest pain goes to immediate assessment and an emergency referral.
-- Neurology, which only the partner clinic offers, is booked there.
-- A slot conflict is recovered by the re-query.
-- Dermatology, available nowhere, goes to staff, who waitlist the patient or assign a manual slot.
-- An unconfirmed booking gets a reminder and is then released.
-- An urgent case nobody picks up alerts the duty manager.
-- A scheduling-API outage (HTTP 503) becomes an incident and recovers after the fix and retry.
+<details>
+<summary><b>Lab 3 – all 12 test outputs</b></summary>
 
 <!-- RESULTS:lab3:BEGIN -->
 | ID | Experiment | Actual end event | Output (real process variables) | Status |
@@ -227,74 +159,38 @@ it starts with the incident Operate showed, which was then fixed and retried.
 **12 / 12 passed.** Instance keys, every action taken and all variables: [`lab3-hospital-triage/evidence/run-log.json`](lab3-hospital-triage/evidence/run-log.json).
 <!-- RESULTS:lab3:END -->
 
-### Other outputs
+</details>
 
-- **DMN sample evaluations:** every rule of every decision table was evaluated against the *deployed* decision:
-  [Lab 1](lab1-loan-approval/docs/dmn-sample-evaluations.md) · [Lab 2](lab2-order-fulfilment/docs/dmn-sample-evaluations.md) ·
-  [Lab 3](lab3-hospital-triage/docs/dmn-sample-evaluations.md). Each set includes a FIRST-hit precedence case.
-- **Unit tests** (`mvn test`, all passing):
+More detail is in each lab's `REPORT.md` (architecture, variable dictionary, limitations, all screenshots) and in `docs/` (DMN rules and sample evaluations).
 
-  | Test class | Tests | Checks |
-  |---|---|---|
-  | `ApplicantValidatorTest` (Lab 1) | 4 | complete + eligible application and ratio maths, incomplete (fixable), not eligible (final), malformed variable |
-  | `OrderPricingTest` (Lab 2) | 3 | free shipping above 100 EUR, VIP 10% discount + same-day fee, small order pays shipping (incl. VAT) |
-  | `OrderValidatorAndInventoryTest` (Lab 2) | 4 | valid order enriched, unknown product / bad quantity, reservation and release, secondary warehouse covers the primary |
-  | `PaymentRetryPolicyTest` (Lab 2) | 2 | retry defaults added only when the order brings none; one more try with the default limit |
-  | `RegistrationValidatorTest` (Lab 3) | 6 | required fields, ranges, formats, timer defaults / overrides, invalid duration |
-  | `SearchWindowTest` (Lab 3) | 4 | appointment search window from max wait days and preferred date |
-  | `SlotCalendarTest` (Lab 3) | 3 | neurology only at the partner clinic, no dermatology anywhere, booking and releasing a slot |
+## How to run
 
-- **REST examples:** real requests and responses captured from the mock APIs are in each lab's `api-examples/` folder.
-- **Screenshots:** each lab's `evidence/screenshots/` folder and the gallery at the end of each `REPORT.md`.
-
-## Repository layout
-
-```
-├── pom.xml                         Maven parent (Java 21, Spring Boot 3.5.16, Camunda starter 8.8.32)
-├── lab1-loan-approval/             ┐
-├── lab2-order-fulfilment/          │  each lab:
-├── lab3-hospital-triage/           ┘   src/main/resources/models/  BPMN, DMN, forms (deployed on start-up)
-│                                       src/main/java/...           job workers, mock REST API, fault injection
-│                                       src/test/java/...           unit tests
-│                                       test-data/                  one JSON file per test scenario
-│                                       api-examples/               real REST request/response samples
-│                                       docs/                       DMN rules + real sample evaluations
-│                                       evidence/                   run-log.json, test-results.md, screenshots/
-│                                       REPORT.md                   implementation report
-```
-
-## Prerequisites
-
-- Camunda 8 Run 8.8 (we used the copy bundled with Camunda Modeler 5.49: `c8run\start-c8run.bat`)
-- JDK 21+ and Maven 3.9+
-
-## Quick start
+You need Camunda 8 Run 8.8 (bundled with Camunda Modeler 5.49: `c8run\start-c8run.bat`), JDK 21+ and Maven 3.9+.
 
 ```bash
-# 1. Camunda 8 Run must be running (Operate: http://localhost:8080/operate)
-# 2. Build and unit-test all labs
-mvn test
-# 3. Start one lab app (deploys its BPMN/DMN/forms and starts workers + mock API)
-mvn -pl lab1-loan-approval spring-boot:run
-# 4. In another terminal: start an instance with the variables of a test scenario
-curl -X POST http://localhost:8080/v2/process-instances -H "Content-Type: application/json" \
-  -d '{"processDefinitionId": "loan-approval", "variables": { ...the "variables" block of a test-data/*.json file... }}'
-# 5. Follow it in Operate (http://localhost:8080/operate), complete human tasks in Tasklist (http://localhost:8080/tasklist)
+mvn test                                    # build and run the unit tests
+mvn -pl lab1-loan-approval spring-boot:run  # deploys BPMN/DMN/form, starts workers + mock API
 ```
 
-Lab 2 uses port 8082 and Lab 3 uses port 8083; all three apps can run at the same time.
+Start an instance with the `variables` block of any `test-data/*.json` file:
 
-## Coverage of the common submission checklist
+```bash
+curl -X POST http://localhost:8080/v2/process-instances -H "Content-Type: application/json" -d '{"processDefinitionId": "loan-approval", "variables": { ... }}'
+```
 
-| Checklist item | Lab 1 | Lab 2 | Lab 3 |
-|---|---|---|---|
-| BPMN model + design screenshot | `models/loan-approval.bpmn`, `01-bpmn-design.png` | `models/order-fulfilment.bpmn`, `01-…` | `models/patient-appointment-triage.bpmn`, `01-…` |
-| DMN model, rules, sample results | `loan-decision.dmn`, `docs/` | `order-priority.dmn`, `docs/` | `triage-category.dmn`, `docs/` |
-| Worker source + run instructions | `src/main/java`, REPORT §8 | REPORT §8 | REPORT §9 |
-| REST Connector config + API examples | REPORT §4, `api-examples/` | REPORT §5, `api-examples/` | REPORT §5–6, `api-examples/` |
-| Process-variable dictionary | REPORT §5 | REPORT §6 | REPORT §7 |
-| Tests: success, rejection, manual review, failure/recovery | REPORT §6 | REPORT §7 | REPORT §8 |
-| Deployment + execution evidence | `03-…`, `04-…` screenshots, `run-log.json` | same | same |
-| Tasklist evidence | `05-…`, `06-…` (completed in the UI) | same | same |
-| Operate monitoring + incident resolution | `07-…`–`10-…` | same | same |
-| Short report | `REPORT.md` | `REPORT.md` | `REPORT.md` |
+Then watch it in Operate (http://localhost:8080/operate) and complete human tasks in Tasklist (http://localhost:8080/tasklist).
+Lab 2 runs on port 8082 and Lab 3 on 8083.
+
+## Where to find each deliverable
+
+Each lab folder has the same structure:
+
+| Deliverable | Location |
+|---|---|
+| BPMN, DMN, forms | `src/main/resources/models/` |
+| Worker and mock API code | `src/main/java/`, tests in `src/test/java/` |
+| REST request/response examples | `api-examples/` |
+| Test inputs | `test-data/` (one JSON per test) |
+| DMN rules and sample results | `docs/` |
+| Screenshots and run log | `evidence/screenshots/`, `evidence/run-log.json` |
+| Report (architecture, variables, limitations) | `REPORT.md` |
