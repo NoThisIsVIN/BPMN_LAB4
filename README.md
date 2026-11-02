@@ -13,6 +13,74 @@ including incident investigation and recovery.
 
 All data is **synthetic**. There are no real payment credentials, secrets or patient data, and the decision rules are educational.
 
+## At a glance: BPMN, DMN, form and REST API
+
+Click any image to open it at full size.
+
+### Lab 1 – Loan approval
+
+**BPMN** – [`loan-approval.bpmn`](lab1-loan-approval/src/main/resources/models/loan-approval.bpmn)
+
+[![Lab 1 BPMN](lab1-loan-approval/evidence/screenshots/01-bpmn-design.png)](lab1-loan-approval/evidence/screenshots/01-bpmn-design.png)
+
+<table>
+<tr><th>DMN – <a href="lab1-loan-approval/src/main/resources/models/loan-decision.dmn"><code>loan-decision.dmn</code></a></th><th>Tasklist form – <a href="lab1-loan-approval/src/main/resources/models/loan-review-form.form"><code>loan-review-form.form</code></a></th></tr>
+<tr>
+<td width="60%"><a href="lab1-loan-approval/evidence/screenshots/02-dmn-decision-table.png"><img src="lab1-loan-approval/evidence/screenshots/02-dmn-decision-table.png" alt="Lab 1 DMN"></a></td>
+<td width="40%"><a href="lab1-loan-approval/evidence/screenshots/06-tasklist-task-form.png"><img src="lab1-loan-approval/evidence/screenshots/06-tasklist-task-form.png" alt="Lab 1 form"></a></td>
+</tr>
+</table>
+
+**REST API** – REST Outbound Connector → mock API (requests and real responses in [`api-examples/`](lab1-loan-approval/api-examples/))
+
+| Connector task | Request | When it fails |
+|---|---|---|
+| Request credit score – primary bureau | `POST http://localhost:8081/mock/credit-bureau/primary/assessments` | HTTP 5xx or timeout (5 s) → BPMN error → backup bureau |
+| Request credit score – backup bureau | `POST http://localhost:8081/mock/credit-bureau/backup/assessments` | also down → loan officer decides without a score |
+
+### Lab 2 – E-commerce order fulfilment
+
+**BPMN** – [`order-fulfilment.bpmn`](lab2-order-fulfilment/src/main/resources/models/order-fulfilment.bpmn)
+
+[![Lab 2 BPMN](lab2-order-fulfilment/evidence/screenshots/01-bpmn-design.png)](lab2-order-fulfilment/evidence/screenshots/01-bpmn-design.png)
+
+<table>
+<tr><th>DMN – <a href="lab2-order-fulfilment/src/main/resources/models/order-priority.dmn"><code>order-priority.dmn</code></a></th><th>Tasklist form – <a href="lab2-order-fulfilment/src/main/resources/models/order-verification-form.form"><code>order-verification-form.form</code></a></th></tr>
+<tr>
+<td width="60%"><a href="lab2-order-fulfilment/evidence/screenshots/02-dmn-decision-table.png"><img src="lab2-order-fulfilment/evidence/screenshots/02-dmn-decision-table.png" alt="Lab 2 DMN"></a></td>
+<td width="40%"><a href="lab2-order-fulfilment/evidence/screenshots/06-tasklist-task-form.png"><img src="lab2-order-fulfilment/evidence/screenshots/06-tasklist-task-form.png" alt="Lab 2 form"></a></td>
+</tr>
+</table>
+
+**REST API** – REST Outbound Connector → mock API (requests and real responses in [`api-examples/`](lab2-order-fulfilment/api-examples/))
+
+| Connector task | Request | When it fails |
+|---|---|---|
+| Charge payment – primary provider | `POST http://localhost:8082/mock/payment-gateway/primary/charges` | HTTP 503 → backup provider; DECLINED (HTTP 200) → ask the customer for another payment method |
+| Charge payment – backup provider | `POST http://localhost:8082/mock/payment-gateway/backup/charges` | also down → retries → incident in Operate → fixed and retried |
+
+### Lab 3 – Hospital appointment and patient triage
+
+**BPMN** – [`patient-appointment-triage.bpmn`](lab3-hospital-triage/src/main/resources/models/patient-appointment-triage.bpmn)
+
+[![Lab 3 BPMN](lab3-hospital-triage/evidence/screenshots/01-bpmn-design.png)](lab3-hospital-triage/evidence/screenshots/01-bpmn-design.png)
+
+<table>
+<tr><th>DMN – <a href="lab3-hospital-triage/src/main/resources/models/triage-category.dmn"><code>triage-category.dmn</code></a></th><th>Tasklist form – <a href="lab3-hospital-triage/src/main/resources/models/priority-review-form.form"><code>priority-review-form.form</code></a></th></tr>
+<tr>
+<td width="60%"><a href="lab3-hospital-triage/evidence/screenshots/02-dmn-decision-table.png"><img src="lab3-hospital-triage/evidence/screenshots/02-dmn-decision-table.png" alt="Lab 3 DMN"></a></td>
+<td width="40%"><a href="lab3-hospital-triage/evidence/screenshots/06-tasklist-task-form-priority-review.png"><img src="lab3-hospital-triage/evidence/screenshots/06-tasklist-task-form-priority-review.png" alt="Lab 3 form"></a></td>
+</tr>
+</table>
+
+**REST API** – REST Outbound Connector → mock API (requests and real responses in [`api-examples/`](lab3-hospital-triage/api-examples/))
+
+| Connector task | Request | When it fails |
+|---|---|---|
+| Retrieve available slots | `GET http://localhost:8083/mock/scheduling/availability-requests/{id}/slots?site=MAIN_HOSPITAL` | no slots → partner clinic; outage → retries → incident in Operate → fixed and retried |
+| Search partner clinic | `GET http://localhost:8083/mock/scheduling/availability-requests/{id}/slots?site=PARTNER_CLINIC` | no slots there either → scheduling staff resolve it in Tasklist |
+| Re-query available slots | `GET http://localhost:8083/mock/scheduling/availability-requests/{id}/slots?site={same site}` | used after the booking API answers HTTP 409 (slot taken) |
+
 Each process also models **real-world pitfalls and their solutions** rather than only the happy path:
 
 | Lab | Pitfall → solution modelled in BPMN |
@@ -58,8 +126,6 @@ it starts with the incident Operate showed, which was then fixed and retried.
 - Every timer fired in a real run (with test durations of a few seconds): application closed, review escalated, offer expired.
 - The two worker failures appear as incidents in Operate and finish normally once the cause is fixed and the job retried.
 
-![Lab 1 BPMN](lab1-loan-approval/evidence/screenshots/01-bpmn-design.png)
-
 <!-- RESULTS:lab1:BEGIN -->
 | ID | Experiment | Actual end event | Output (real process variables) | Status |
 |---|---|---|---|---|
@@ -103,8 +169,6 @@ it starts with the incident Operate showed, which was then fixed and retried.
 - High-value and NEW-customer orders wait for the reviewer.
 - With both payment providers down, and with the inventory service down, an incident is raised; after the service is restored and the job retried, the order is fulfilled.
 
-![Lab 2 BPMN](lab2-order-fulfilment/evidence/screenshots/01-bpmn-design.png)
-
 <!-- RESULTS:lab2:BEGIN -->
 | ID | Experiment | Actual end event | Output (real process variables) | Status |
 |---|---|---|---|---|
@@ -143,8 +207,6 @@ it starts with the incident Operate showed, which was then fixed and retried.
 - An unconfirmed booking gets a reminder and is then released.
 - An urgent case nobody picks up alerts the duty manager.
 - A scheduling-API outage (HTTP 503) becomes an incident and recovers after the fix and retry.
-
-![Lab 3 BPMN](lab3-hospital-triage/evidence/screenshots/01-bpmn-design.png)
 
 <!-- RESULTS:lab3:BEGIN -->
 | ID | Experiment | Actual end event | Output (real process variables) | Status |
