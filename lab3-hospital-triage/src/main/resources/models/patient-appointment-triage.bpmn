@@ -49,7 +49,9 @@
         <bpmn:flowNodeRef>Boundary_SlotTakenAgain</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_SendReminder</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>EndEvent_ReminderSent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_SystemBooking</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_ReleaseSlot</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_JoinReleased</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_NotifyReleased</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>EndEvent_SlotReleased</bpmn:flowNodeRef>
       </bpmn:lane>
@@ -117,10 +119,23 @@
       <bpmn:incoming>Flow_JoinPriority_JoinUrgent</bpmn:incoming>
       <bpmn:outgoing>Flow_JoinUrgent_Request</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_RequestAvailability" name="Request appointment availability">
-      <bpmn:documentation>Java job worker. Builds the search window (today .. today + maxWaitDays, starting at the preferred date when it lies inside the window) and registers an availability request with the mock scheduling API. Output: availabilityRequestId, searchFromDate, searchToDate.</bpmn:documentation>
+    <bpmn:serviceTask id="Task_RequestAvailability" name="Request appointment availability" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12">
+      <bpmn:documentation>REST Outbound Connector -&gt; POST /mock/scheduling/availability-requests. The scheduling system registers the search and returns its window (today .. today + maxWaitDays, starting at the preferred date when it lies inside the window). Output: availabilityRequestId, searchFromDate, searchToDate.</bpmn:documentation>
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="triage.request-availability" retries="3" />
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+        <zeebe:input source="noAuth" target="authentication.type" />
+        <zeebe:input source="POST" target="method" />
+        <zeebe:input source="http://localhost:8083/mock/scheduling/availability-requests" target="url" />
+        <zeebe:input source='={"Content-Type": "application/json", "Accept": "application/json"}' target="headers" />
+        <zeebe:input source="5" target="connectionTimeoutInSeconds" />
+        <zeebe:input source="10" target="readTimeoutInSeconds" />
+        <zeebe:input source="={patientReference: patientReference, department: department, maxWaitDays: maxWaitDays, preferredDate: preferredDate, timeOfDay: timeOfDay, urgencyCategory: urgencyCategory}" target="body" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+        <zeebe:header key="retryBackoff" value="PT5S" />
+        <zeebe:header key="resultExpression" value="={availabilityRequestId: response.body.availabilityRequestId, searchFromDate: response.body.fromDate, searchToDate: response.body.toDate}" />
+        </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_JoinUrgent_Request</bpmn:incoming>
       <bpmn:outgoing>Flow_Request_Slots</bpmn:outgoing>
@@ -156,10 +171,24 @@
       <bpmn:incoming>Flow_Partner_Yes</bpmn:incoming>
       <bpmn:outgoing>Flow_JoinSlotFound_Book</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_BookAppointment" name="Book appointment">
-      <bpmn:documentation>Java job worker. Books the earliest retrieved slot (main hospital or partner clinic). If every retrieved slot was taken by someone else in the meantime (HTTP 409) it throws BPMN error SLOT_TAKEN. Outputs bookingStatus, bookingReference, appointmentSlot, bookingSite.</bpmn:documentation>
+    <bpmn:serviceTask id="Task_BookAppointment" name="Book appointment" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12">
+      <bpmn:documentation>REST Outbound Connector -&gt; POST /mock/scheduling/bookings with the retrieved slot IDs; the scheduling system books the earliest free one. HTTP 409 (every slot taken by someone else in the meantime) -&gt; error expression -&gt; BPMN error SLOT_TAKEN. Outputs bookingStatus, bookingReference, appointmentSlot, bookingSite.</bpmn:documentation>
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="triage.book-appointment" retries="3" />
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+        <zeebe:input source="noAuth" target="authentication.type" />
+        <zeebe:input source="POST" target="method" />
+        <zeebe:input source="http://localhost:8083/mock/scheduling/bookings" target="url" />
+        <zeebe:input source='={"Content-Type": "application/json", "Accept": "application/json"}' target="headers" />
+        <zeebe:input source="5" target="connectionTimeoutInSeconds" />
+        <zeebe:input source="10" target="readTimeoutInSeconds" />
+        <zeebe:input source="={availabilityRequestId: availabilityRequestId, patientReference: patientReference, slotIds: for s in availableSlots return s.slotId}" target="body" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+        <zeebe:header key="retryBackoff" value="PT5S" />
+        <zeebe:header key="resultExpression" value='={bookingStatus: response.body.status, bookingReference: response.body.bookingReference, bookingSite: response.body.slot.site, appointmentDetails: response.body.slot, slotConflicts: response.body.conflicts, appointmentSlot: response.body.slot.date + " " + response.body.slot.time + " - " + response.body.slot.department + ", " + response.body.slot.clinician + ", " + response.body.slot.location}' />
+        <zeebe:header key="errorExpression" value='=if error != null and error.code = "409" then bpmnError("SLOT_TAKEN", string(error.variables.response.body.error), {slotConflicts: error.variables.response.body.conflicts}) else null' />
+        </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_JoinSlotFound_Book</bpmn:incoming>
       <bpmn:outgoing>Flow_Book_JoinBooked</bpmn:outgoing>
@@ -208,6 +237,12 @@
       <bpmn:timerEventDefinition><bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=confirmationReminderAfter</bpmn:timeDuration></bpmn:timerEventDefinition>
     </bpmn:boundaryEvent>
     <bpmn:boundaryEvent id="Boundary_ConfirmationTimeout" name="Not confirmed in time" attachedToRef="Task_WaitForConfirmation">
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+        <zeebe:output source="=&quot;NOT_CONFIRMED&quot;" target="patientConfirmation" />
+        <zeebe:output source="=&quot;RELEASED&quot;" target="bookingStatus" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
       <bpmn:outgoing>Flow_Timeout_Release</bpmn:outgoing>
       <bpmn:timerEventDefinition><bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=confirmationTimeout</bpmn:timeDuration></bpmn:timerEventDefinition>
     </bpmn:boundaryEvent>
@@ -279,10 +314,24 @@
       <bpmn:outgoing>Flow_Free_Yes</bpmn:outgoing>
       <bpmn:outgoing>Flow_Free_No</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_BookRequeriedSlot" name="Book re-queried slot">
-      <bpmn:documentation>Same Java job worker as 'Book appointment' (second and last automatic attempt).</bpmn:documentation>
+    <bpmn:serviceTask id="Task_BookRequeriedSlot" name="Book re-queried slot" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12">
+      <bpmn:documentation>REST Outbound Connector, same configuration as 'Book appointment' (second and last automatic attempt).</bpmn:documentation>
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="triage.book-appointment" retries="3" />
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+        <zeebe:input source="noAuth" target="authentication.type" />
+        <zeebe:input source="POST" target="method" />
+        <zeebe:input source="http://localhost:8083/mock/scheduling/bookings" target="url" />
+        <zeebe:input source='={"Content-Type": "application/json", "Accept": "application/json"}' target="headers" />
+        <zeebe:input source="5" target="connectionTimeoutInSeconds" />
+        <zeebe:input source="10" target="readTimeoutInSeconds" />
+        <zeebe:input source="={availabilityRequestId: availabilityRequestId, patientReference: patientReference, slotIds: for s in availableSlots return s.slotId}" target="body" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+        <zeebe:header key="retryBackoff" value="PT5S" />
+        <zeebe:header key="resultExpression" value='={bookingStatus: response.body.status, bookingReference: response.body.bookingReference, bookingSite: response.body.slot.site, appointmentDetails: response.body.slot, slotConflicts: response.body.conflicts, appointmentSlot: response.body.slot.date + " " + response.body.slot.time + " - " + response.body.slot.department + ", " + response.body.slot.clinician + ", " + response.body.slot.location}' />
+        <zeebe:header key="errorExpression" value='=if error != null and error.code = "409" then bpmnError("SLOT_TAKEN", string(error.variables.response.body.error), {slotConflicts: error.variables.response.body.conflicts}) else null' />
+        </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Free_Yes</bpmn:incoming>
       <bpmn:outgoing>Flow_Requeried_JoinBooked</bpmn:outgoing>
@@ -304,14 +353,36 @@
     <bpmn:endEvent id="EndEvent_ReminderSent" name="Reminder sent">
       <bpmn:incoming>Flow_Reminder_End</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:serviceTask id="Task_ReleaseSlot" name="Release appointment slot">
-      <bpmn:documentation>Java job worker. Cancels the unconfirmed booking in the scheduling system so the slot becomes free for other patients.</bpmn:documentation>
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="triage.release-slot" retries="3" />
-      </bpmn:extensionElements>
+    <bpmn:exclusiveGateway id="Gateway_SystemBooking" name="Booked in scheduling system?" default="Flow_SystemBooking_No">
       <bpmn:incoming>Flow_Timeout_Release</bpmn:incoming>
-      <bpmn:outgoing>Flow_Release_Notify</bpmn:outgoing>
+      <bpmn:outgoing>Flow_SystemBooking_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_SystemBooking_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_ReleaseSlot" name="Release appointment slot" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12">
+      <bpmn:documentation>REST Outbound Connector -&gt; POST /mock/scheduling/bookings/{bookingReference}/cancellation, so the slot becomes free for other patients. A manually assigned slot has no system booking and skips it.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+        <zeebe:input source="noAuth" target="authentication.type" />
+        <zeebe:input source="POST" target="method" />
+        <zeebe:input source='="http://localhost:8083/mock/scheduling/bookings/" + bookingReference + "/cancellation"' target="url" />
+        <zeebe:input source='={"Content-Type": "application/json", "Accept": "application/json"}' target="headers" />
+        <zeebe:input source="5" target="connectionTimeoutInSeconds" />
+        <zeebe:input source="10" target="readTimeoutInSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+        <zeebe:header key="retryBackoff" value="PT5S" />
+        <zeebe:header key="resultExpression" value="={releasedAt: response.body.releasedAt}" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_SystemBooking_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_Release_Join</bpmn:outgoing>
     </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_JoinReleased">
+      <bpmn:incoming>Flow_SystemBooking_No</bpmn:incoming>
+      <bpmn:incoming>Flow_Release_Join</bpmn:incoming>
+      <bpmn:outgoing>Flow_JoinReleased_Notify</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
     <bpmn:sendTask id="Task_NotifyReleased" name="Notify patient: slot released">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="triage.notify-patient" retries="3" />
@@ -319,7 +390,7 @@
         <zeebe:header key="template" value="SLOT_RELEASED" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_Release_Notify</bpmn:incoming>
+      <bpmn:incoming>Flow_JoinReleased_Notify</bpmn:incoming>
       <bpmn:outgoing>Flow_Released_End</bpmn:outgoing>
     </bpmn:sendTask>
     <bpmn:endEvent id="EndEvent_SlotReleased" name="Slot released – not confirmed">
@@ -515,8 +586,13 @@
     <bpmn:sequenceFlow id="Flow_Wait_End" sourceRef="Task_WaitForConfirmation" targetRef="EndEvent_AppointmentConfirmed" />
     <bpmn:sequenceFlow id="Flow_Reminder_Send" sourceRef="Boundary_ConfirmationReminder" targetRef="Task_SendReminder" />
     <bpmn:sequenceFlow id="Flow_Reminder_End" sourceRef="Task_SendReminder" targetRef="EndEvent_ReminderSent" />
-    <bpmn:sequenceFlow id="Flow_Timeout_Release" sourceRef="Boundary_ConfirmationTimeout" targetRef="Task_ReleaseSlot" />
-    <bpmn:sequenceFlow id="Flow_Release_Notify" sourceRef="Task_ReleaseSlot" targetRef="Task_NotifyReleased" />
+    <bpmn:sequenceFlow id="Flow_Timeout_Release" sourceRef="Boundary_ConfirmationTimeout" targetRef="Gateway_SystemBooking" />
+    <bpmn:sequenceFlow id="Flow_SystemBooking_Yes" sourceRef="Gateway_SystemBooking" targetRef="Task_ReleaseSlot" name="Yes">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=bookingReference != null</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_SystemBooking_No" sourceRef="Gateway_SystemBooking" targetRef="Gateway_JoinReleased" name="No – manual slot" />
+    <bpmn:sequenceFlow id="Flow_Release_Join" sourceRef="Task_ReleaseSlot" targetRef="Gateway_JoinReleased" />
+    <bpmn:sequenceFlow id="Flow_JoinReleased_Notify" sourceRef="Gateway_JoinReleased" targetRef="Task_NotifyReleased" />
     <bpmn:sequenceFlow id="Flow_Released_End" sourceRef="Task_NotifyReleased" targetRef="EndEvent_SlotReleased" />
     <bpmn:textAnnotation id="Annotation_DmnRules">
       <bpmn:text>DMN triage-category (FIRST hit):
@@ -532,7 +608,8 @@ All patient data is synthetic (SYN-P-####).</bpmn:text>
     <bpmn:textAnnotation id="Annotation_SchedulingOutage">
       <bpmn:text>Scheduling API outage (HTTP 503)
 → 3 retries, 5 s back-off
-→ incident in Operate → fix → retry</bpmn:text>
+→ incident in Operate → fix → retry
+Every scheduling API call is a REST connector</bpmn:text>
     </bpmn:textAnnotation>
     <bpmn:textAnnotation id="Annotation_Fallbacks">
       <bpmn:text>Fallbacks before a human is involved:
@@ -547,8 +624,8 @@ confirmation timeout 24 h)</bpmn:text>
     </bpmn:textAnnotation>
     <bpmn:textAnnotation id="Annotation_Legend">
       <bpmn:text>Legend
-green task = Java job worker
-blue task = REST connector
+green task = Java job worker (no HTTP calls)
+blue task = REST connector (every API call)
 purple task = DMN decision
 orange task = human task (Tasklist)
 teal task = waiting for the patient
@@ -564,16 +641,16 @@ grey task = notification</bpmn:text>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_patient-appointment-triage">
       <bpmndi:BPMNShape id="Participant_patient-appointment-triage_di" bpmnElement="Participant_patient-appointment-triage" isHorizontal="true">
-        <dc:Bounds x="160" y="80" width="4128" height="960" />
+        <dc:Bounds x="160" y="80" width="4428" height="960" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_SchedulingStaff_di" bpmnElement="Lane_SchedulingStaff" isHorizontal="true">
-        <dc:Bounds x="190" y="80" width="4098" height="120" />
+        <dc:Bounds x="190" y="80" width="4398" height="120" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_AppointmentSystem_di" bpmnElement="Lane_AppointmentSystem" isHorizontal="true">
-        <dc:Bounds x="190" y="200" width="4098" height="480" />
+        <dc:Bounds x="190" y="200" width="4398" height="480" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_ClinicalStaff_di" bpmnElement="Lane_ClinicalStaff" isHorizontal="true">
-        <dc:Bounds x="190" y="680" width="4098" height="360" />
+        <dc:Bounds x="190" y="680" width="4398" height="360" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="StartEvent_RequestReceived_di" bpmnElement="StartEvent_RequestReceived" bioc:stroke="#2e7d32" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#2e7d32">
         <dc:Bounds x="272" y="362" width="36" height="36" />
@@ -611,7 +688,7 @@ grey task = notification</bpmn:text>
       <bpmndi:BPMNShape id="Gateway_JoinUrgent_di" bpmnElement="Gateway_JoinUrgent" isMarkerVisible="true">
         <dc:Bounds x="1615" y="355" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_RequestAvailability_di" bpmnElement="Task_RequestAvailability" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
+      <bpmndi:BPMNShape id="Task_RequestAvailability_di" bpmnElement="Task_RequestAvailability" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
         <dc:Bounds x="1740" y="340" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_RetrieveSlots_di" bpmnElement="Task_RetrieveSlots" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
@@ -626,7 +703,7 @@ grey task = notification</bpmn:text>
       <bpmndi:BPMNShape id="Gateway_JoinSlotFound_di" bpmnElement="Gateway_JoinSlotFound" isMarkerVisible="true">
         <dc:Bounds x="2515" y="355" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_BookAppointment_di" bpmnElement="Task_BookAppointment" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
+      <bpmndi:BPMNShape id="Task_BookAppointment_di" bpmnElement="Task_BookAppointment" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
         <dc:Bounds x="2640" y="340" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Boundary_SlotTaken_di" bpmnElement="Boundary_SlotTaken" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
@@ -692,7 +769,7 @@ grey task = notification</bpmn:text>
           <dc:Bounds x="2950" y="291" width="80" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_BookRequeriedSlot_di" bpmnElement="Task_BookRequeriedSlot" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
+      <bpmndi:BPMNShape id="Task_BookRequeriedSlot_di" bpmnElement="Task_BookRequeriedSlot" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
         <dc:Bounds x="3090" y="220" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Boundary_SlotTakenAgain_di" bpmnElement="Boundary_SlotTakenAgain" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
@@ -710,16 +787,25 @@ grey task = notification</bpmn:text>
           <dc:Bounds x="3985" y="524" width="110" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_ReleaseSlot_di" bpmnElement="Task_ReleaseSlot" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
-        <dc:Bounds x="3840" y="580" width="100" height="80" />
+      <bpmndi:BPMNShape id="Gateway_SystemBooking_di" bpmnElement="Gateway_SystemBooking" isMarkerVisible="true">
+        <dc:Bounds x="3865" y="595" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3780" y="547" width="100" height="42" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_NotifyReleased_di" bpmnElement="Task_NotifyReleased" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
+      <bpmndi:BPMNShape id="Task_ReleaseSlot_di" bpmnElement="Task_ReleaseSlot" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
         <dc:Bounds x="3990" y="580" width="100" height="80" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_JoinReleased_di" bpmnElement="Gateway_JoinReleased" isMarkerVisible="true">
+        <dc:Bounds x="4165" y="595" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyReleased_di" bpmnElement="Task_NotifyReleased" bioc:stroke="#455a64" bioc:fill="#eceff1" color:background-color="#eceff1" color:border-color="#455a64">
+        <dc:Bounds x="4290" y="580" width="100" height="80" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_SlotReleased_di" bpmnElement="EndEvent_SlotReleased" bioc:stroke="#c62828" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#c62828">
-        <dc:Bounds x="4172" y="602" width="36" height="36" />
+        <dc:Bounds x="4472" y="602" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="4140" y="644" width="100" height="28" />
+          <dc:Bounds x="4440" y="644" width="100" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_PriorityReview_di" bpmnElement="Task_PriorityReview" bioc:stroke="#e65100" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#e65100">
@@ -1055,15 +1141,35 @@ grey task = notification</bpmn:text>
       <bpmndi:BPMNEdge id="Flow_Timeout_Release_di" bpmnElement="Flow_Timeout_Release">
         <di:waypoint x="3715" y="438" />
         <di:waypoint x="3715" y="620" />
-        <di:waypoint x="3840" y="620" />
+        <di:waypoint x="3865" y="620" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_Release_Notify_di" bpmnElement="Flow_Release_Notify">
-        <di:waypoint x="3940" y="620" />
+      <bpmndi:BPMNEdge id="Flow_SystemBooking_Yes_di" bpmnElement="Flow_SystemBooking_Yes">
+        <di:waypoint x="3915" y="620" />
         <di:waypoint x="3990" y="620" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3923" y="598" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SystemBooking_No_di" bpmnElement="Flow_SystemBooking_No">
+        <di:waypoint x="3890" y="645" />
+        <di:waypoint x="3890" y="670" />
+        <di:waypoint x="4190" y="670" />
+        <di:waypoint x="4190" y="645" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3940" y="654" width="104" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Release_Join_di" bpmnElement="Flow_Release_Join">
+        <di:waypoint x="4090" y="620" />
+        <di:waypoint x="4165" y="620" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_JoinReleased_Notify_di" bpmnElement="Flow_JoinReleased_Notify">
+        <di:waypoint x="4215" y="620" />
+        <di:waypoint x="4290" y="620" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Released_End_di" bpmnElement="Flow_Released_End">
-        <di:waypoint x="4090" y="620" />
-        <di:waypoint x="4172" y="620" />
+        <di:waypoint x="4390" y="620" />
+        <di:waypoint x="4472" y="620" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Annotation_DmnRules_di" bpmnElement="Annotation_DmnRules">
         <dc:Bounds x="400" y="94" width="340" height="92" />
@@ -1072,7 +1178,7 @@ grey task = notification</bpmn:text>
         <dc:Bounds x="920" y="118" width="300" height="44" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Annotation_SchedulingOutage_di" bpmnElement="Annotation_SchedulingOutage">
-        <dc:Bounds x="1590" y="230" width="230" height="60" />
+        <dc:Bounds x="1590" y="230" width="230" height="76" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Annotation_Fallbacks_di" bpmnElement="Annotation_Fallbacks">
         <dc:Bounds x="1590" y="102" width="270" height="76" />

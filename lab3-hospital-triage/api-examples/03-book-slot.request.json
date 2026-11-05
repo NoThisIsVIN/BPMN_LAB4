@@ -1,5 +1,11 @@
 {
-  "availabilityRequestId": "AR-5D1F9D14",
-  "slotId": "MH-GEN-20261030-1000",
-  "patientReference": "SYN-P-0901"
+    "availabilityRequestId": "AR-441A40A4",
+    "patientReference": "SYN-P-0901",
+    "slotIds": [
+        "MH-GEN-20261107-0800",
+        "MH-GEN-20261107-0900",
+        "MH-GEN-20261107-1000",
+        "MH-GEN-20261107-1100",
+        "MH-GEN-20261108-0800"
+    ]
 }

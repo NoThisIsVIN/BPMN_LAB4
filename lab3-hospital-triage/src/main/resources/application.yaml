@@ -17,10 +17,6 @@ camunda:
         max-jobs-active: 8
         stream-enabled: true
 
-scheduling:
-  # Mock hospital scheduling API (served by this application, see edu.pbj2.lab3.mock)
-  base-url: http://localhost:8083/mock/scheduling
-
 logging:
   level:
     edu.pbj2: INFO

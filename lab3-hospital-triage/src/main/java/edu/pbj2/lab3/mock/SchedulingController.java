@@ -1,6 +1,7 @@
 package edu.pbj2.lab3.mock;
 
 import edu.pbj2.lab3.faults.FaultInjection;
+import edu.pbj2.lab3.scheduling.SearchWindow;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
@@ -25,12 +26,15 @@ import org.springframework.web.bind.annotation.RestController;
  * Mock hospital scheduling API (synthetic data only).
  *
  * <pre>
- * POST /mock/scheduling/availability-requests                         register a search -> {availabilityRequestId, ...}
+ * POST /mock/scheduling/availability-requests                         register a search -> {availabilityRequestId,
+ *                                                                      fromDate, toDate, ...}
  * GET  /mock/scheduling/availability-requests/{id}/slots?site=SITE    free slots (max 5), SITE = MAIN_HOSPITAL (default)
- *                                                                      or PARTNER_CLINIC -> called by the REST Connectors
- * POST /mock/scheduling/bookings                                      book a slot -> {bookingReference, status, slot}
+ *                                                                      or PARTNER_CLINIC
+ * POST /mock/scheduling/bookings                                      book the first free of the given slots
+ *                                                                      -> {bookingReference, status, slot, conflicts}
  * POST /mock/scheduling/bookings/{bookingReference}/cancellation      release an unconfirmed booking
  * </pre>
+ * Every endpoint is called by a REST Outbound Connector task in the BPMN; no Java worker calls this API.
  * Fault {@code scheduling-api-down} makes every slot query answer HTTP 503. Fault {@code booking-conflict-once}
  * lets "another patient" take each slot we try to book (HTTP 409) until the next slot query.
  */
@@ -55,13 +59,19 @@ public class SchedulingController {
 
   @PostMapping("/availability-requests")
   public ResponseEntity<Map<String, Object>> register(@RequestBody Map<String, Object> body) {
-    for (String required : List.of("patientReference", "department", "fromDate", "toDate")) {
+    for (String required : List.of("patientReference", "department", "maxWaitDays")) {
       if (body.get(required) == null) {
         return error(HttpStatus.BAD_REQUEST, required + " is required");
       }
     }
+    Object preferred = body.get("preferredDate");
+    SearchWindow window = SearchWindow.of(LocalDate.now(), ((Number) body.get("maxWaitDays")).intValue(),
+        preferred == null ? null : LocalDate.parse(preferred.toString()));
     String id = "AR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     Map<String, Object> request = new LinkedHashMap<>(body);
+    request.putIfAbsent("timeOfDay", "ANY");
+    request.put("fromDate", window.from().toString());
+    request.put("toDate", window.to().toString());
     request.put("availabilityRequestId", id);
     request.put("createdAt", OffsetDateTime.now().toString());
     requests.put(id, request);
@@ -107,33 +117,50 @@ public class SchedulingController {
     return ResponseEntity.ok(response);
   }
 
+  /**
+   * Books the first free slot of {@code slotIds} (in the order given, i.e. earliest first). Slots taken by
+   * someone else in the meantime are skipped and counted; when all of them are taken the answer is HTTP 409,
+   * which the BPMN maps to the error SLOT_TAKEN.
+   */
   @PostMapping("/bookings")
   public ResponseEntity<Map<String, Object>> book(@RequestBody Map<String, Object> body) {
-    String slotId = String.valueOf(body.get("slotId"));
     String patientReference = String.valueOf(body.get("patientReference"));
-    var slot = calendar.find(slotId);
-    if (slot.isEmpty()) {
-      return error(HttpStatus.NOT_FOUND, "Unknown slot " + slotId);
+    if (!(body.get("slotIds") instanceof List<?> slotIds) || slotIds.isEmpty()) {
+      return error(HttpStatus.BAD_REQUEST, "slotIds (non-empty list) is required");
     }
-    if (faults.isActive(FaultInjection.BOOKING_CONFLICT_ONCE)) {
-      calendar.book(slotId, OTHER_PATIENT); // somebody else was faster
-      conflictServed.set(true);
-      return error(HttpStatus.CONFLICT, "Slot " + slotId + " was just booked by another patient");
+    int conflicts = 0;
+    for (Object candidate : slotIds) {
+      String slotId = String.valueOf(candidate);
+      var slot = calendar.find(slotId);
+      if (slot.isEmpty()) {
+        return error(HttpStatus.NOT_FOUND, "Unknown slot " + slotId);
+      }
+      if (faults.isActive(FaultInjection.BOOKING_CONFLICT_ONCE)) {
+        calendar.book(slotId, OTHER_PATIENT); // somebody else was faster
+        conflictServed.set(true);
+      }
+      if (!calendar.book(slotId, patientReference)) {
+        conflicts++;
+        LOG.warn("Slot {} already booked by another patient, trying the next one", slotId);
+        continue;
+      }
+      String reference = "BK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+      bookings.put(reference, slotId);
+      Map<String, Object> booking = new LinkedHashMap<>();
+      booking.put("bookingReference", reference);
+      booking.put("status", "CONFIRMED");
+      booking.put("patientReference", patientReference);
+      booking.put("availabilityRequestId", body.get("availabilityRequestId"));
+      booking.put("slot", slot.get().toMap());
+      booking.put("conflicts", conflicts);
+      booking.put("bookedAt", OffsetDateTime.now().toString());
+      LOG.info("Booking confirmed: {}", booking);
+      return ResponseEntity.status(HttpStatus.CREATED).body(booking);
     }
-    if (!calendar.book(slotId, patientReference)) {
-      return error(HttpStatus.CONFLICT, "Slot " + slotId + " is already booked");
-    }
-    String reference = "BK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-    bookings.put(reference, slotId);
-    Map<String, Object> booking = new LinkedHashMap<>();
-    booking.put("bookingReference", reference);
-    booking.put("status", "CONFIRMED");
-    booking.put("patientReference", patientReference);
-    booking.put("availabilityRequestId", body.get("availabilityRequestId"));
-    booking.put("slot", slot.get().toMap());
-    booking.put("bookedAt", OffsetDateTime.now().toString());
-    LOG.info("Booking confirmed: {}", booking);
-    return ResponseEntity.status(HttpStatus.CREATED).body(booking);
+    LOG.warn("Scheduling API responding 409: all {} slots were taken", conflicts);
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+        "error", "All " + conflicts + " retrieved slots were taken by other patients before booking",
+        "status", 409, "conflicts", conflicts));
   }
 
   @PostMapping("/bookings/{bookingReference}/cancellation")

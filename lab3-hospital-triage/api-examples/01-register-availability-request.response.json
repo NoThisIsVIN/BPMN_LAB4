@@ -1,10 +1,12 @@
 {
     "patientReference": "SYN-P-0901",
     "department": "GENERAL_PRACTICE",
-    "fromDate": "2026-10-30",
-    "toDate": "2026-11-13",
+    "maxWaitDays": 14,
+    "preferredDate": "2026-11-07",
     "timeOfDay": "MORNING",
     "urgencyCategory": "ROUTINE",
-    "availabilityRequestId": "AR-5D1F9D14",
-    "createdAt": "2026-10-30T19:24:46.397393+05:30"
+    "fromDate": "2026-11-07",
+    "toDate": "2026-11-19",
+    "availabilityRequestId": "AR-441A40A4",
+    "createdAt": "2026-11-05T15:59:10.987199300+05:30"
 }

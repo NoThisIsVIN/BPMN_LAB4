@@ -1,4 +1,5 @@
 {
-    "error": "Slot PC-NEU-20261030-0800 is already booked",
+    "conflicts": 3,
+    "error": "All 3 retrieved slots were taken by other patients before booking",
     "status": 409
 }

@@ -1,5 +1,11 @@
 {
-  "availabilityRequestId": "AR-CD6A1F95",
-  "slotId": "PC-NEU-20261030-0800",
-  "patientReference": "SYN-P-0901"
+    "availabilityRequestId": "AR-8F6405CA",
+    "patientReference": "SYN-P-0901",
+    "slotIds": [
+        "PC-NEU-20261107-0800",
+        "PC-NEU-20261107-0900",
+        "PC-NEU-20261107-1000",
+        "PC-NEU-20261107-1100",
+        "PC-NEU-20261107-1300"
+    ]
 }

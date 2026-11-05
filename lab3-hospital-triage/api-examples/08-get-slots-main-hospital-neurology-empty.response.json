@@ -1,9 +1,9 @@
 {
-    "availabilityRequestId": "AR-CD6A1F95",
+    "availabilityRequestId": "AR-8F6405CA",
     "site": "MAIN_HOSPITAL",
     "department": "NEUROLOGY",
-    "fromDate": "2026-10-30",
-    "toDate": "2026-11-13",
+    "fromDate": "2026-11-07",
+    "toDate": "2026-11-19",
     "timeOfDay": "ANY",
     "slots": []
 }

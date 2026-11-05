@@ -58,10 +58,10 @@ Click any picture to open it at full size.
 1. A Java worker **validates** the registration.
 2. The **DMN** sorts the request into *Routine*, *Priority review* or *Urgent assessment* (educational rules, not medical advice).
 3. **Urgent** cases go to a clinician in Tasklist, and the duty manager is alerted if nobody picks them up. **Priority** cases go to a staff review.
-4. The REST Connector **finds free slots** at the main hospital, or at the **partner clinic** if the hospital has none. If a slot is taken while booking, it searches again.
+4. REST Connectors **find free slots** at the main hospital, or at the **partner clinic** if the hospital has none, and then **book** one. If the slot is taken while booking (HTTP 409), it searches again.
 5. The patient must **confirm**: a reminder is sent, and unconfirmed slots are released.
 
-**REST API:** `GET http://localhost:8083/mock/scheduling/availability-requests/{id}/slots?site=MAIN_HOSPITAL` (or `PARTNER_CLINIC`) · examples in [`api-examples/`](lab3-hospital-triage/api-examples/)
+**REST API:** every scheduling call is a REST Connector (blue tasks): `POST /availability-requests` → `GET /availability-requests/{id}/slots?site=MAIN_HOSPITAL` (or `PARTNER_CLINIC`) → `POST /bookings` → `POST /bookings/{ref}/cancellation`, all on `http://localhost:8083/mock/scheduling` · examples in [`api-examples/`](lab3-hospital-triage/api-examples/)
 
 [![Lab 3 BPMN](lab3-hospital-triage/evidence/screenshots/01-bpmn-design.png)](lab3-hospital-triage/evidence/screenshots/01-bpmn-design.png)
 
@@ -78,8 +78,8 @@ Click any picture to open it at full size.
 |---|---|---|---|---|---|
 | Lab 1 | 17 | 17 | 4 | 2 | 4 / 4 |
 | Lab 2 | 12 | 12 | 2 | 2 | 9 / 9 |
-| Lab 3 | 12 | 12 | 8 | 1 | 13 / 13 |
-| **Total** | **41** | **41** | **14** | **5** | **26 / 26** |
+| Lab 3 | 12 | 12 | 8 | 1 | 16 / 16 |
+| **Total** | **41** | **41** | **14** | **5** | **29 / 29** |
 
 The outputs below are the real process variables read back from the engine after each run. For failure tests, the
 output starts with the incident shown in Operate, which was then fixed and retried.
@@ -143,17 +143,17 @@ output starts with the incident shown in Operate, which was then fixed and retri
 <!-- RESULTS:lab3:BEGIN -->
 | ID | Experiment | Actual end event | Output (real process variables) | Status |
 |---|---|---|---|---|
-| L3-01 | Routine request, main hospital slot booked, patient confirms | AppointmentConfirmed | DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **CONFIRMED** BK-5D9EED53 · 2026-11-03 09:00 - GENERAL_PRACTICE · patient CONFIRMED | **PASS** |
-| L3-02 | Moderate pain → priority staff review (Tasklist UI) → booked → confirmed | AppointmentConfirmed | DMN **PRIORITY_REVIEW** (Moderate pain (5-7 out of 10), max wait 3 d) · staff review: BOOK_APPOINTMENT · 5 slots found · booking **CONFIRMED** BK-CE5DDFFE · 2026-10-30 14:00 - ORTHOPAEDICS · patient CONFIRMED | **PASS** |
+| L3-01 | Routine request, main hospital slot booked, patient confirms | AppointmentConfirmed | DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **CONFIRMED** BK-810A8637 · 2026-11-05 09:00 - GENERAL_PRACTICE · patient CONFIRMED | **PASS** |
+| L3-02 | Moderate pain → priority staff review (Tasklist UI) → booked → confirmed | AppointmentConfirmed | DMN **PRIORITY_REVIEW** (Moderate pain (5-7 out of 10), max wait 3 d) · staff review: BOOK_APPOINTMENT · 5 slots found · booking **CONFIRMED** BK-9231382C · 2026-11-05 13:00 - ORTHOPAEDICS · patient CONFIRMED | **PASS** |
 | L3-03 | Chest pain → immediate clinical assessment (Tasklist UI) → ED referral | EmergencyReferral | DMN **URGENT_ASSESSMENT** (Chest pain reported, max wait 0 d) · clinical assessment: EMERGENCY_REFERRAL | **PASS** |
 | L3-04 | No slot at main hospital or partner clinic (DERMATOLOGY) → staff waitlists | Waitlisted | DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · scheduling staff: WAITLIST · 0 slots found · booking **WAITLISTED** · at **partner clinic** | **PASS** |
 | L3-05 | Incomplete registration returned to patient | RequestIncomplete | registration incomplete: patientReference is required; painLevel is required | **PASS** |
-| L3-06 | Scheduling API down → incident → service restored → retried → booked → confirmed | AppointmentConfirmed | incident `JOB_NO_RETRIES` on `Task_RetrieveSlots`: “HTTP 503: Scheduling service temporarily unavailable” → fixed, retried → DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **CONFIRMED** BK-31E454FE · 2026-11-03 09:00 - RESPIRATORY · patient CONFIRMED | **PASS** |
-| L3-07 | Priority review escalated to urgent → same-day slot → confirmed | AppointmentConfirmed | DMN: High fever in patient aged 65 or over → staff escalated to **URGENT_ASSESSMENT** (max wait 0 d) · staff review: ESCALATE_URGENT · clinical assessment: BOOK_URGENT_SLOT · 5 slots found · booking **CONFIRMED** BK-2354A854 · 2026-10-30 09:00 - GENERAL_PRACTICE · patient CONFIRMED | **PASS** |
+| L3-06 | Scheduling API down → incident → service restored → retried → booked → confirmed | AppointmentConfirmed | incident `JOB_NO_RETRIES` on `Task_RetrieveSlots`: “HTTP 503: Scheduling service temporarily unavailable” → fixed, retried → DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **CONFIRMED** BK-0B3E02C0 · 2026-11-05 08:00 - RESPIRATORY · patient CONFIRMED | **PASS** |
+| L3-07 | Priority review escalated to urgent → same-day slot → confirmed | AppointmentConfirmed | DMN: High fever in patient aged 65 or over → staff escalated to **URGENT_ASSESSMENT** (max wait 0 d) · staff review: ESCALATE_URGENT · clinical assessment: BOOK_URGENT_SLOT · 5 slots found · booking **CONFIRMED** BK-401CBA2D · 2026-11-05 10:00 - GENERAL_PRACTICE · patient CONFIRMED | **PASS** |
 | L3-08 | No slot anywhere → scheduling staff assigns a manual slot → confirmed | AppointmentConfirmed | DMN **PRIORITY_REVIEW** (Symptoms persisting for more than 14 days, max wait 5 d) · staff review: BOOK_APPOINTMENT · scheduling staff: MANUAL_SLOT · 0 slots found · booking **CONFIRMED_MANUAL** · 2026-11-05 15:00 - Dermatology extra clinic · at **partner clinic** · patient CONFIRMED | **PASS** |
-| L3-09 | Main hospital has no NEUROLOGY slot → partner clinic slot booked → confirmed | AppointmentConfirmed | DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **CONFIRMED** BK-9F627217 · 2026-11-03 09:00 - NEUROLOGY · at **partner clinic** · patient CONFIRMED | **PASS** |
-| L3-10 | Slots taken by other patients while booking → re-query → booked → confirmed | AppointmentConfirmed | DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **CONFIRMED** BK-0906014F · 2026-11-05 09:00 - CARDIOLOGY · after **re-query** (slot taken) · patient CONFIRMED | **PASS** |
-| L3-11 | Patient never confirms → reminder timer → timeout timer → slot released | ReminderSent, SlotReleased | DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **RELEASED** BK-1BD3D4CD · 2026-11-03 08:00 - ORTHOPAEDICS · patient NOT_CONFIRMED | **PASS** |
+| L3-09 | Main hospital has no NEUROLOGY slot → partner clinic slot booked → confirmed | AppointmentConfirmed | DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **CONFIRMED** BK-A8BDF9FC · 2026-11-05 08:00 - NEUROLOGY · at **partner clinic** · patient CONFIRMED | **PASS** |
+| L3-10 | Slots taken by other patients while booking → re-query → booked → confirmed | AppointmentConfirmed | DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **CONFIRMED** BK-43E2F87D · 2026-11-05 14:00 - CARDIOLOGY · after **re-query** (slot taken) · patient CONFIRMED | **PASS** |
+| L3-11 | Patient never confirms → reminder timer → timeout timer → slot released | ReminderSent, SlotReleased | DMN **ROUTINE** (No urgency indicators present, max wait 14 d) · 5 slots found · booking **RELEASED** BK-32395E9A · 2026-11-05 08:00 - ORTHOPAEDICS · patient NOT_CONFIRMED | **PASS** |
 | L3-12 | Urgent assessment not picked up → duty manager escalated → then assessed → ED referral | DutyManagerAlerted, EmergencyReferral | DMN **URGENT_ASSESSMENT** (Breathing difficulty reported, max wait 0 d) · clinical assessment: EMERGENCY_REFERRAL | **PASS** |
 
 **12 / 12 passed.** Instance keys, every action taken and all variables: [`lab3-hospital-triage/evidence/run-log.json`](lab3-hospital-triage/evidence/run-log.json).

@@ -1,16 +1,17 @@
 {
-    "bookingReference": "BK-15FEE229",
+    "bookingReference": "BK-6B6C8600",
     "status": "CONFIRMED",
     "patientReference": "SYN-P-0901",
-    "availabilityRequestId": "AR-CD6A1F95",
+    "availabilityRequestId": "AR-8F6405CA",
     "slot": {
-        "slotId": "PC-NEU-20261030-0800",
+        "slotId": "PC-NEU-20261107-0800",
         "site": "PARTNER_CLINIC",
         "department": "NEUROLOGY",
-        "date": "2026-10-30",
+        "date": "2026-11-07",
         "time": "08:00",
         "clinician": "Clinician A (synthetic)",
         "location": "Partner clinic (synthetic), room 1"
     },
-    "bookedAt": "2026-10-30T19:24:28.750501600+05:30"
+    "conflicts": 0,
+    "bookedAt": "2026-11-05T15:59:11.045239100+05:30"
 }
