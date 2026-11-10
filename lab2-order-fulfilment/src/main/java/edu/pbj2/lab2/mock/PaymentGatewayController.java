@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <ul>
  *   <li>{@code tok_test_approve} -> 200, status APPROVED</li>
+ *   <li>{@code tok_test_primary_down} -> primary provider 503, backup provider APPROVED (demo of the fallback)</li>
  *   <li>{@code tok_test_decline_funds} -> 200, status DECLINED "Insufficient funds"</li>
  *   <li>{@code tok_test_decline_fraud} -> 200, status DECLINED "Suspected fraud"</li>
  *   <li>any other token -> 200, status DECLINED "Unknown payment token"</li>
@@ -48,7 +49,7 @@ public class PaymentGatewayController {
     LOG.info("Charge requested at {} provider: {}", provider, request);
 
     boolean down = switch (provider) {
-      case "primary" -> faults.isActive(FaultInjection.PRIMARY_PAYMENT_DOWN);
+      case "primary" -> faults.isActive(FaultInjection.PRIMARY_PAYMENT_DOWN) || "tok_test_primary_down".equals(token);
       case "backup" -> faults.isActive(FaultInjection.BACKUP_PAYMENT_DOWN);
       default -> true;
     };
@@ -59,7 +60,7 @@ public class PaymentGatewayController {
     }
 
     String declineReason = switch (token) {
-      case "tok_test_approve" -> null;
+      case "tok_test_approve", "tok_test_primary_down" -> null;
       case "tok_test_decline_funds" -> "Insufficient funds";
       case "tok_test_decline_fraud" -> "Suspected fraud";
       default -> "Unknown payment token";
