@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_order-fulfilment" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.49.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_order-fulfilment" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.49.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
   <bpmn:collaboration id="Collaboration_order-fulfilment">
-    <bpmn:participant id="Participant_order-fulfilment" name="E-Commerce Order Processing &amp; Fulfilment (educational scenario)" processRef="order-fulfilment" />
+    <bpmn:participant id="Participant_order-fulfilment" name="E-Commerce Order Processing &#38; Fulfilment (educational scenario)" processRef="order-fulfilment" />
   </bpmn:collaboration>
   <bpmn:process id="order-fulfilment" name="Order Fulfilment" isExecutable="true">
     <bpmn:documentation>Validates an order, reserves stock (primary warehouse, falling back to a secondary one), calculates the total, determines delivery priority (DMN), verifies high-value/exception orders in Tasklist, charges the primary payment provider (falling back to a backup provider) via REST connectors, lets the customer try another payment method after a decline, and books the shipment (primary carrier, falling back to a backup carrier). Synthetic data and mock payment tokens only.</bpmn:documentation>
@@ -77,7 +77,7 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="order.check-inventory" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="warehouse" value="PRIMARY" />
+          <zeebe:header key="warehouse" value="PRIMARY" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Valid_Yes</bpmn:incoming>
@@ -93,7 +93,7 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="order.check-inventory" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="warehouse" value="SECONDARY" />
+          <zeebe:header key="warehouse" value="SECONDARY" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Primary_No</bpmn:incoming>
@@ -122,9 +122,9 @@
       <bpmn:extensionElements>
         <zeebe:calledDecision decisionId="order-priority" resultVariable="priorityDecision" />
         <zeebe:ioMapping>
-        <zeebe:output source="=priorityDecision" target="priorityDecision" />
-        <zeebe:output source="=priorityDecision.deliveryPriority" target="deliveryPriority" />
-        <zeebe:output source="=priorityDecision.slaHours" target="slaHours" />
+          <zeebe:output source="=priorityDecision" target="priorityDecision" />
+          <zeebe:output source="=priorityDecision.deliveryPriority" target="deliveryPriority" />
+          <zeebe:output source="=priorityDecision.slaHours" target="slaHours" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Total_Priority</bpmn:incoming>
@@ -145,23 +145,23 @@
       <bpmn:incoming>Flow_NewMethod_Loop</bpmn:incoming>
       <bpmn:outgoing>Flow_Attempt_Primary</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_ChargePrimary" name="Charge payment – primary provider" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12">
+    <bpmn:serviceTask id="Task_ChargePrimary" name="Charge payment – primary provider" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjAzMzUgOC45OTk5N0MxNy4wMzM1IDEzLjQ0NzUgMTMuNDI4MSAxNy4wNTI5IDguOTgwNjUgMTcuMDUyOUM0LjUzMzE2IDE3LjA1MjkgMC45Mjc3NjUgMTMuNDQ3NSAwLjkyNzc2NSA4Ljk5OTk3QzAuOTI3NzY1IDQuNTUyNDggNC41MzMxNiAwLjk0NzA4MyA4Ljk4MDY1IDAuOTQ3MDgzQzEzLjQyODEgMC45NDcwODMgMTcuMDMzNSA0LjU1MjQ4IDE3LjAzMzUgOC45OTk5N1oiIGZpbGw9IiM1MDU1NjIiLz4KPHBhdGggZD0iTTQuOTMxMjYgMTQuMTU3MUw2Ljc4MTA2IDMuNzE0NzFIMTAuMTM3NUMxMS4xOTE3IDMuNzE0NzEgMTEuOTgyNCAzLjk4MzIzIDEyLjUwOTUgNC41MjAyN0MxMy4wNDY1IDUuMDQ3MzYgMTMuMzE1IDUuNzMzNTggMTMuMzE1IDYuNTc4OTJDMTMuMzE1IDcuNDQ0MTQgMTMuMDcxNCA4LjE1NTIyIDEyLjU4NDEgOC43MTIxNUMxMi4xMDY3IDkuMjU5MTMgMTEuNDU1MyA5LjYzNzA1IDEwLjYyOTggOS44NDU5TDEyLjA2MTkgMTQuMTU3MUgxMC4zMzE1TDkuMDMzNjQgMTAuMDI0OUg3LjI0MzUxTDYuNTEyNTQgMTQuMTU3MUg0LjkzMTI2Wk03LjQ5NzExIDguNTkyODFIOS4yNDI0OEM5Ljk5ODMyIDguNTkyODEgMTAuNTkwMSA4LjQyMzc0IDExLjAxNzcgOC4wODU2MUMxMS40NTUzIDcuNzM3NTMgMTEuNjc0MSA3LjI2NTEzIDExLjY3NDEgNi42Njg0MkMxMS42NzQxIDYuMTkxMDYgMTEuNTI0OSA1LjgxODExIDExLjIyNjUgNS41NDk1OUMxMC45MjgyIDUuMjcxMTMgMTAuNDU1OCA1LjEzMTkgOS44MDkzNiA1LjEzMTlIOC4xMDg3NEw3LjQ5NzExIDguNTkyODFaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
       <bpmn:documentation>REST Outbound Connector -&gt; POST /mock/payment-gateway/primary/charges. Declines are HTTP 200 with status DECLINED (a business answer). HTTP 5xx / 408 timeout of the provider is mapped to BPMN error PAYMENT_PROVIDER_DOWN -&gt; the backup provider is used.</bpmn:documentation>
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="1" />
         <zeebe:ioMapping>
-        <zeebe:input source="noAuth" target="authentication.type" />
-        <zeebe:input source="POST" target="method" />
-        <zeebe:input source="http://localhost:8082/mock/payment-gateway/primary/charges" target="url" />
-        <zeebe:input source='={"Content-Type": "application/json", "Accept": "application/json"}' target="headers" />
-        <zeebe:input source="5" target="connectionTimeoutInSeconds" />
-        <zeebe:input source="5" target="readTimeoutInSeconds" />
-        <zeebe:input source="={orderId: orderId, amount: orderTotal, currency: currency, paymentToken: paymentToken, customerReference: customerReference}" target="body" />
+          <zeebe:input source="noAuth" target="authentication.type" />
+          <zeebe:input source="POST" target="method" />
+          <zeebe:input source="http://localhost:8082/mock/payment-gateway/primary/charges" target="url" />
+          <zeebe:input source="={&#34;Content-Type&#34;: &#34;application/json&#34;, &#34;Accept&#34;: &#34;application/json&#34;}" target="headers" />
+          <zeebe:input source="5" target="connectionTimeoutInSeconds" />
+          <zeebe:input source="5" target="readTimeoutInSeconds" />
+          <zeebe:input source="={orderId: orderId, amount: orderTotal, currency: currency, paymentToken: paymentToken, customerReference: customerReference}" target="body" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
-        <zeebe:header key="retryBackoff" value="PT5S" />
-        <zeebe:header key="resultExpression" value="={paymentStatus: response.body.status, transactionId: response.body.transactionId, declineReason: response.body.declineReason, paymentProvider: response.body.provider}" />
-        <zeebe:header key="errorExpression" value='=if error != null and (string(error.code) = "408" or starts with(string(error.code), "5")) then bpmnError("PAYMENT_PROVIDER_DOWN", "Primary payment provider unavailable", {primaryPaymentError: "HTTP " + string(error.code) + ": " + (if error.variables.response.body.error != null then string(error.variables.response.body.error) else string(error.message))}) else null' />
+          <zeebe:header key="retryBackoff" value="PT5S" />
+          <zeebe:header key="resultExpression" value="={paymentStatus: response.body.status, transactionId: response.body.transactionId, declineReason: response.body.declineReason, paymentProvider: response.body.provider}" />
+          <zeebe:header key="errorExpression" value="=if error != null and (string(error.code) = &#34;408&#34; or starts with(string(error.code), &#34;5&#34;)) then bpmnError(&#34;PAYMENT_PROVIDER_DOWN&#34;, &#34;Primary payment provider unavailable&#34;, {primaryPaymentError: &#34;HTTP &#34; + string(error.code) + &#34;: &#34; + (if error.variables.response.body.error != null then string(error.variables.response.body.error) else string(error.message))}) else null" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Attempt_Primary</bpmn:incoming>
@@ -170,29 +170,29 @@
     <bpmn:boundaryEvent id="Boundary_PrimaryProviderDown" name="Provider down" attachedToRef="Task_ChargePrimary">
       <bpmn:extensionElements>
         <zeebe:ioMapping>
-        <zeebe:output source="=true" target="paymentFallbackUsed" />
-        <zeebe:output source="=primaryPaymentError" target="primaryPaymentError" />
+          <zeebe:output source="=true" target="paymentFallbackUsed" />
+          <zeebe:output source="=primaryPaymentError" target="primaryPaymentError" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
       <bpmn:outgoing>Flow_ProviderDown_Backup</bpmn:outgoing>
       <bpmn:errorEventDefinition id="Error_PaymentProviderDown_def" errorRef="Error_PaymentProviderDown" />
     </bpmn:boundaryEvent>
-    <bpmn:serviceTask id="Task_ChargeBackup" name="Charge payment – backup provider" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12">
+    <bpmn:serviceTask id="Task_ChargeBackup" name="Charge payment – backup provider" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="12" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjAzMzUgOC45OTk5N0MxNy4wMzM1IDEzLjQ0NzUgMTMuNDI4MSAxNy4wNTI5IDguOTgwNjUgMTcuMDUyOUM0LjUzMzE2IDE3LjA1MjkgMC45Mjc3NjUgMTMuNDQ3NSAwLjkyNzc2NSA4Ljk5OTk3QzAuOTI3NzY1IDQuNTUyNDggNC41MzMxNiAwLjk0NzA4MyA4Ljk4MDY1IDAuOTQ3MDgzQzEzLjQyODEgMC45NDcwODMgMTcuMDMzNSA0LjU1MjQ4IDE3LjAzMzUgOC45OTk5N1oiIGZpbGw9IiM1MDU1NjIiLz4KPHBhdGggZD0iTTQuOTMxMjYgMTQuMTU3MUw2Ljc4MTA2IDMuNzE0NzFIMTAuMTM3NUMxMS4xOTE3IDMuNzE0NzEgMTEuOTgyNCAzLjk4MzIzIDEyLjUwOTUgNC41MjAyN0MxMy4wNDY1IDUuMDQ3MzYgMTMuMzE1IDUuNzMzNTggMTMuMzE1IDYuNTc4OTJDMTMuMzE1IDcuNDQ0MTQgMTMuMDcxNCA4LjE1NTIyIDEyLjU4NDEgOC43MTIxNUMxMi4xMDY3IDkuMjU5MTMgMTEuNDU1MyA5LjYzNzA1IDEwLjYyOTggOS44NDU5TDEyLjA2MTkgMTQuMTU3MUgxMC4zMzE1TDkuMDMzNjQgMTAuMDI0OUg3LjI0MzUxTDYuNTEyNTQgMTQuMTU3MUg0LjkzMTI2Wk03LjQ5NzExIDguNTkyODFIOS4yNDI0OEM5Ljk5ODMyIDguNTkyODEgMTAuNTkwMSA4LjQyMzc0IDExLjAxNzcgOC4wODU2MUMxMS40NTUzIDcuNzM3NTMgMTEuNjc0MSA3LjI2NTEzIDExLjY3NDEgNi42Njg0MkMxMS42NzQxIDYuMTkxMDYgMTEuNTI0OSA1LjgxODExIDExLjIyNjUgNS41NDk1OUMxMC45MjgyIDUuMjcxMTMgMTAuNDU1OCA1LjEzMTkgOS44MDkzNiA1LjEzMTlIOC4xMDg3NEw3LjQ5NzExIDguNTkyODFaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
       <bpmn:documentation>REST Outbound Connector -&gt; POST /mock/payment-gateway/backup/charges. No error expression on purpose: if the backup provider is down too, the job is retried 3 times (5 s back-off) and then an incident is raised for an operator.</bpmn:documentation>
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
-        <zeebe:input source="noAuth" target="authentication.type" />
-        <zeebe:input source="POST" target="method" />
-        <zeebe:input source="http://localhost:8082/mock/payment-gateway/backup/charges" target="url" />
-        <zeebe:input source='={"Content-Type": "application/json", "Accept": "application/json"}' target="headers" />
-        <zeebe:input source="5" target="connectionTimeoutInSeconds" />
-        <zeebe:input source="10" target="readTimeoutInSeconds" />
-        <zeebe:input source="={orderId: orderId, amount: orderTotal, currency: currency, paymentToken: paymentToken, customerReference: customerReference}" target="body" />
+          <zeebe:input source="noAuth" target="authentication.type" />
+          <zeebe:input source="POST" target="method" />
+          <zeebe:input source="http://localhost:8082/mock/payment-gateway/backup/charges" target="url" />
+          <zeebe:input source="={&#34;Content-Type&#34;: &#34;application/json&#34;, &#34;Accept&#34;: &#34;application/json&#34;}" target="headers" />
+          <zeebe:input source="5" target="connectionTimeoutInSeconds" />
+          <zeebe:input source="10" target="readTimeoutInSeconds" />
+          <zeebe:input source="={orderId: orderId, amount: orderTotal, currency: currency, paymentToken: paymentToken, customerReference: customerReference}" target="body" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
-        <zeebe:header key="retryBackoff" value="PT5S" />
-        <zeebe:header key="resultExpression" value="={paymentStatus: response.body.status, transactionId: response.body.transactionId, declineReason: response.body.declineReason, paymentProvider: response.body.provider}" />
+          <zeebe:header key="retryBackoff" value="PT5S" />
+          <zeebe:header key="resultExpression" value="={paymentStatus: response.body.status, transactionId: response.body.transactionId, declineReason: response.body.declineReason, paymentProvider: response.body.provider}" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_ProviderDown_Backup</bpmn:incoming>
@@ -213,7 +213,7 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="order.book-shipment" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="carrier" value="PRIMARY" />
+          <zeebe:header key="carrier" value="PRIMARY" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Payment_Yes</bpmn:incoming>
@@ -228,7 +228,7 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="order.book-shipment" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="carrier" value="BACKUP" />
+          <zeebe:header key="carrier" value="BACKUP" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_CarrierDown_Backup</bpmn:incoming>
@@ -243,7 +243,7 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="order.notify-customer" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="template" value="ORDER_CONFIRMED" />
+          <zeebe:header key="template" value="ORDER_CONFIRMED" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Shipment_Notify</bpmn:incoming>
@@ -256,7 +256,7 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="order.notify-customer" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="template" value="ORDER_INVALID" />
+          <zeebe:header key="template" value="ORDER_INVALID" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Valid_No</bpmn:incoming>
@@ -285,7 +285,9 @@
     </bpmn:receiveTask>
     <bpmn:boundaryEvent id="Boundary_NoNewPaymentMethod" name="No reply in time" attachedToRef="Task_WaitForPaymentMethod">
       <bpmn:outgoing>Flow_Timeout_Cancel</bpmn:outgoing>
-      <bpmn:timerEventDefinition><bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=paymentRetryTimeout</bpmn:timeDuration></bpmn:timerEventDefinition>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=paymentRetryTimeout</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
     </bpmn:boundaryEvent>
     <bpmn:exclusiveGateway id="Gateway_JoinCancelPayment">
       <bpmn:incoming>Flow_Retry_No</bpmn:incoming>
@@ -304,7 +306,7 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="order.notify-customer" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="template" value="PAYMENT_DECLINED" />
+          <zeebe:header key="template" value="PAYMENT_DECLINED" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Release_NotifyDeclined</bpmn:incoming>
@@ -317,7 +319,7 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="order.notify-customer" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="template" value="OUT_OF_STOCK" />
+          <zeebe:header key="template" value="OUT_OF_STOCK" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Secondary_No</bpmn:incoming>
@@ -334,8 +336,8 @@
         <zeebe:assignmentDefinition candidateGroups="order-reviewers" />
         <zeebe:priorityDefinition priority="70" />
         <zeebe:ioMapping>
-        <zeebe:output source="=verificationDecision" target="verificationDecision" />
-        <zeebe:output source="=verificationComment" target="verificationComment" />
+          <zeebe:output source="=verificationDecision" target="verificationDecision" />
+          <zeebe:output source="=verificationComment" target="verificationComment" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Verification_Yes</bpmn:incoming>
@@ -358,7 +360,7 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="order.notify-customer" retries="3" />
         <zeebe:taskHeaders>
-        <zeebe:header key="template" value="CANCELLED_BY_REVIEW" />
+          <zeebe:header key="template" value="CANCELLED_BY_REVIEW" />
         </zeebe:taskHeaders>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_ReleaseReview_Notify</bpmn:incoming>
@@ -369,34 +371,34 @@
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_Start_Validate" sourceRef="StartEvent_OrderPlaced" targetRef="Task_ValidateOrder" />
     <bpmn:sequenceFlow id="Flow_Validate_Gw" sourceRef="Task_ValidateOrder" targetRef="Gateway_OrderValid" />
-    <bpmn:sequenceFlow id="Flow_Valid_Yes" sourceRef="Gateway_OrderValid" targetRef="Task_CheckPrimaryWarehouse" name="Yes">
+    <bpmn:sequenceFlow id="Flow_Valid_Yes" name="Yes" sourceRef="Gateway_OrderValid" targetRef="Task_CheckPrimaryWarehouse">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=orderValid = true</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Valid_No" sourceRef="Gateway_OrderValid" targetRef="Task_NotifyInvalid" name="No" />
+    <bpmn:sequenceFlow id="Flow_Valid_No" name="No" sourceRef="Gateway_OrderValid" targetRef="Task_NotifyInvalid" />
     <bpmn:sequenceFlow id="Flow_NotifyInvalid_End" sourceRef="Task_NotifyInvalid" targetRef="EndEvent_OrderRejected" />
     <bpmn:sequenceFlow id="Flow_Primary_Gw" sourceRef="Task_CheckPrimaryWarehouse" targetRef="Gateway_PrimaryStock" />
-    <bpmn:sequenceFlow id="Flow_Primary_Yes" sourceRef="Gateway_PrimaryStock" targetRef="Gateway_JoinStock" name="Yes">
+    <bpmn:sequenceFlow id="Flow_Primary_Yes" name="Yes" sourceRef="Gateway_PrimaryStock" targetRef="Gateway_JoinStock">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=stockStatus = "AVAILABLE"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Primary_No" sourceRef="Gateway_PrimaryStock" targetRef="Task_CheckSecondaryWarehouse" name="No – try secondary" />
+    <bpmn:sequenceFlow id="Flow_Primary_No" name="No – try secondary" sourceRef="Gateway_PrimaryStock" targetRef="Task_CheckSecondaryWarehouse" />
     <bpmn:sequenceFlow id="Flow_Secondary_Gw" sourceRef="Task_CheckSecondaryWarehouse" targetRef="Gateway_SecondaryStock" />
-    <bpmn:sequenceFlow id="Flow_Secondary_Yes" sourceRef="Gateway_SecondaryStock" targetRef="Gateway_JoinStock" name="Yes">
+    <bpmn:sequenceFlow id="Flow_Secondary_Yes" name="Yes" sourceRef="Gateway_SecondaryStock" targetRef="Gateway_JoinStock">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=stockStatus = "AVAILABLE"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Secondary_No" sourceRef="Gateway_SecondaryStock" targetRef="Task_NotifyOutOfStock" name="No" />
+    <bpmn:sequenceFlow id="Flow_Secondary_No" name="No" sourceRef="Gateway_SecondaryStock" targetRef="Task_NotifyOutOfStock" />
     <bpmn:sequenceFlow id="Flow_OutOfStock_End" sourceRef="Task_NotifyOutOfStock" targetRef="EndEvent_OutOfStock" />
     <bpmn:sequenceFlow id="Flow_JoinStock_Total" sourceRef="Gateway_JoinStock" targetRef="Task_CalculateTotal" />
     <bpmn:sequenceFlow id="Flow_Total_Priority" sourceRef="Task_CalculateTotal" targetRef="Task_DeterminePriority" />
     <bpmn:sequenceFlow id="Flow_Priority_Gw" sourceRef="Task_DeterminePriority" targetRef="Gateway_VerificationRequired" />
-    <bpmn:sequenceFlow id="Flow_Verification_No" sourceRef="Gateway_VerificationRequired" targetRef="Gateway_JoinVerified" name="No" />
-    <bpmn:sequenceFlow id="Flow_Verification_Yes" sourceRef="Gateway_VerificationRequired" targetRef="Task_VerifyOrder" name="Yes">
+    <bpmn:sequenceFlow id="Flow_Verification_No" name="No" sourceRef="Gateway_VerificationRequired" targetRef="Gateway_JoinVerified" />
+    <bpmn:sequenceFlow id="Flow_Verification_Yes" name="Yes" sourceRef="Gateway_VerificationRequired" targetRef="Task_VerifyOrder">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=orderTotal &gt;= 2000 or (customerCategory = "NEW" and orderTotal &gt;= 1000)</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_Verify_Gw" sourceRef="Task_VerifyOrder" targetRef="Gateway_OrderVerified" />
-    <bpmn:sequenceFlow id="Flow_Verified_Yes" sourceRef="Gateway_OrderVerified" targetRef="Gateway_JoinVerified" name="Yes">
+    <bpmn:sequenceFlow id="Flow_Verified_Yes" name="Yes" sourceRef="Gateway_OrderVerified" targetRef="Gateway_JoinVerified">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=verificationDecision = "APPROVED"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Verified_No" sourceRef="Gateway_OrderVerified" targetRef="Task_ReleaseStockReview" name="No" />
+    <bpmn:sequenceFlow id="Flow_Verified_No" name="No" sourceRef="Gateway_OrderVerified" targetRef="Task_ReleaseStockReview" />
     <bpmn:sequenceFlow id="Flow_ReleaseReview_Notify" sourceRef="Task_ReleaseStockReview" targetRef="Task_NotifyCancelledReview" />
     <bpmn:sequenceFlow id="Flow_NotifyCancelled_End" sourceRef="Task_NotifyCancelledReview" targetRef="EndEvent_CancelledByReviewer" />
     <bpmn:sequenceFlow id="Flow_JoinVerified_Attempt" sourceRef="Gateway_JoinVerified" targetRef="Gateway_JoinPaymentAttempt" />
@@ -405,16 +407,16 @@
     <bpmn:sequenceFlow id="Flow_ProviderDown_Backup" sourceRef="Boundary_PrimaryProviderDown" targetRef="Task_ChargeBackup" />
     <bpmn:sequenceFlow id="Flow_Backup_Result" sourceRef="Task_ChargeBackup" targetRef="Gateway_JoinPaymentResult" />
     <bpmn:sequenceFlow id="Flow_Result_Gw" sourceRef="Gateway_JoinPaymentResult" targetRef="Gateway_PaymentApproved" />
-    <bpmn:sequenceFlow id="Flow_Payment_Yes" sourceRef="Gateway_PaymentApproved" targetRef="Task_BookPrimaryCarrier" name="Yes">
+    <bpmn:sequenceFlow id="Flow_Payment_Yes" name="Yes" sourceRef="Gateway_PaymentApproved" targetRef="Task_BookPrimaryCarrier">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=paymentStatus = "APPROVED"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Payment_No" sourceRef="Gateway_PaymentApproved" targetRef="Gateway_RetryAllowed" name="Declined" />
-    <bpmn:sequenceFlow id="Flow_Retry_Yes" sourceRef="Gateway_RetryAllowed" targetRef="Task_AskNewPaymentMethod" name="Yes">
+    <bpmn:sequenceFlow id="Flow_Payment_No" name="Declined" sourceRef="Gateway_PaymentApproved" targetRef="Gateway_RetryAllowed" />
+    <bpmn:sequenceFlow id="Flow_Retry_Yes" name="Yes" sourceRef="Gateway_RetryAllowed" targetRef="Task_AskNewPaymentMethod">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=paymentAttempts &lt; maxPaymentAttempts</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Retry_No" sourceRef="Gateway_RetryAllowed" targetRef="Gateway_JoinCancelPayment" name="No" />
+    <bpmn:sequenceFlow id="Flow_Retry_No" name="No" sourceRef="Gateway_RetryAllowed" targetRef="Gateway_JoinCancelPayment" />
     <bpmn:sequenceFlow id="Flow_Ask_Wait" sourceRef="Task_AskNewPaymentMethod" targetRef="Task_WaitForPaymentMethod" />
-    <bpmn:sequenceFlow id="Flow_NewMethod_Loop" sourceRef="Task_WaitForPaymentMethod" targetRef="Gateway_JoinPaymentAttempt" name="New payment method" />
+    <bpmn:sequenceFlow id="Flow_NewMethod_Loop" name="New payment method" sourceRef="Task_WaitForPaymentMethod" targetRef="Gateway_JoinPaymentAttempt" />
     <bpmn:sequenceFlow id="Flow_Timeout_Cancel" sourceRef="Boundary_NoNewPaymentMethod" targetRef="Gateway_JoinCancelPayment" />
     <bpmn:sequenceFlow id="Flow_Cancel_Release" sourceRef="Gateway_JoinCancelPayment" targetRef="Task_ReleaseStockPayment" />
     <bpmn:sequenceFlow id="Flow_Release_NotifyDeclined" sourceRef="Task_ReleaseStockPayment" targetRef="Task_NotifyPaymentDeclined" />
@@ -483,11 +485,12 @@ grey task = notification</bpmn:text>
       <bpmndi:BPMNShape id="Participant_order-fulfilment_di" bpmnElement="Participant_order-fulfilment" isHorizontal="true">
         <dc:Bounds x="160" y="80" width="3828" height="880" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_OrderSystem_di" bpmnElement="Lane_OrderSystem" isHorizontal="true">
-        <dc:Bounds x="190" y="80" width="3798" height="660" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_OrderReviewer_di" bpmnElement="Lane_OrderReviewer" isHorizontal="true">
         <dc:Bounds x="190" y="740" width="3798" height="220" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_OrderSystem_di" bpmnElement="Lane_OrderSystem" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="3798" height="660" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="StartEvent_OrderPlaced_di" bpmnElement="StartEvent_OrderPlaced" bioc:stroke="#2e7d32" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#2e7d32">
         <dc:Bounds x="272" y="447" width="36" height="36" />
@@ -546,12 +549,6 @@ grey task = notification</bpmn:text>
       <bpmndi:BPMNShape id="Task_ChargePrimary_di" bpmnElement="Task_ChargePrimary" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
         <dc:Bounds x="2490" y="425" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Boundary_PrimaryProviderDown_di" bpmnElement="Boundary_PrimaryProviderDown" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
-        <dc:Bounds x="2522" y="487" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2564" y="521" width="60" height="28" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_ChargeBackup_di" bpmnElement="Task_ChargeBackup" bioc:stroke="#1565c0" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#1565c0">
         <dc:Bounds x="2640" y="535" width="100" height="80" />
       </bpmndi:BPMNShape>
@@ -566,12 +563,6 @@ grey task = notification</bpmn:text>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_BookPrimaryCarrier_di" bpmnElement="Task_BookPrimaryCarrier" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
         <dc:Bounds x="3090" y="425" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Boundary_CarrierUnavailable_di" bpmnElement="Boundary_CarrierUnavailable" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
-        <dc:Bounds x="3122" y="487" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="3164" y="521" width="60" height="28" />
-        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_BookBackupCarrier_di" bpmnElement="Task_BookBackupCarrier" bioc:stroke="#2e7d32" bioc:fill="#e8f5e9" color:background-color="#e8f5e9" color:border-color="#2e7d32">
         <dc:Bounds x="3240" y="535" width="100" height="80" />
@@ -608,12 +599,6 @@ grey task = notification</bpmn:text>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_WaitForPaymentMethod_di" bpmnElement="Task_WaitForPaymentMethod" bioc:stroke="#00838f" bioc:fill="#e0f7fa" color:background-color="#e0f7fa" color:border-color="#00838f">
         <dc:Bounds x="3390" y="205" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Boundary_NoNewPaymentMethod_di" bpmnElement="Boundary_NoNewPaymentMethod" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
-        <dc:Bounds x="3422" y="267" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="3464" y="295" width="60" height="28" />
-        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_JoinCancelPayment_di" bpmnElement="Gateway_JoinCancelPayment" isMarkerVisible="true">
         <dc:Bounds x="3415" y="330" width="50" height="50" />
@@ -658,6 +643,45 @@ grey task = notification</bpmn:text>
         <dc:Bounds x="2522" y="887" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="2485" y="929" width="110" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_StockFallback_di" bpmnElement="Annotation_StockFallback">
+        <dc:Bounds x="690" y="95" width="270" height="76" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_VerificationRule_di" bpmnElement="Annotation_VerificationRule">
+        <dc:Bounds x="1440" y="105" width="230" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_PaymentFallback_di" bpmnElement="Annotation_PaymentFallback">
+        <dc:Bounds x="2630" y="755" width="270" height="76" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_DeclineRetry_di" bpmnElement="Annotation_DeclineRetry">
+        <dc:Bounds x="2470" y="211" width="330" height="76" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_CarrierFallback_di" bpmnElement="Annotation_CarrierFallback">
+        <dc:Bounds x="3100" y="659" width="230" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_DmnRules_di" bpmnElement="Annotation_DmnRules">
+        <dc:Bounds x="250" y="743" width="260" height="124" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_Legend_di" bpmnElement="Annotation_Legend">
+        <dc:Bounds x="880" y="743" width="270" height="124" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_NoNewPaymentMethod_di" bpmnElement="Boundary_NoNewPaymentMethod" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
+        <dc:Bounds x="3422" y="267" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3464" y="295" width="60" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_CarrierUnavailable_di" bpmnElement="Boundary_CarrierUnavailable" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
+        <dc:Bounds x="3122" y="487" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3164" y="521" width="60" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_PrimaryProviderDown_di" bpmnElement="Boundary_PrimaryProviderDown" bioc:stroke="#c62828" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#c62828">
+        <dc:Bounds x="2522" y="487" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2564" y="521" width="60" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_Start_Validate_di" bpmnElement="Flow_Start_Validate">
@@ -893,27 +917,6 @@ grey task = notification</bpmn:text>
         <di:waypoint x="3640" y="465" />
         <di:waypoint x="3722" y="465" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="Annotation_StockFallback_di" bpmnElement="Annotation_StockFallback">
-        <dc:Bounds x="690" y="95" width="270" height="76" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Annotation_VerificationRule_di" bpmnElement="Annotation_VerificationRule">
-        <dc:Bounds x="1440" y="105" width="230" height="60" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Annotation_PaymentFallback_di" bpmnElement="Annotation_PaymentFallback">
-        <dc:Bounds x="2630" y="755" width="270" height="76" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Annotation_DeclineRetry_di" bpmnElement="Annotation_DeclineRetry">
-        <dc:Bounds x="2470" y="211" width="330" height="76" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Annotation_CarrierFallback_di" bpmnElement="Annotation_CarrierFallback">
-        <dc:Bounds x="3100" y="659" width="230" height="60" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Annotation_DmnRules_di" bpmnElement="Annotation_DmnRules">
-        <dc:Bounds x="250" y="743" width="260" height="124" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Annotation_Legend_di" bpmnElement="Annotation_Legend">
-        <dc:Bounds x="880" y="743" width="270" height="124" />
-      </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
